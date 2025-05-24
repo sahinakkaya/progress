@@ -1,0 +1,46 @@
+name: Frontend CD
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron:  '38 19 * * *' # run the cron job every day at 19.38
+  push:
+    branches:
+      - "main"
+    tags-ignore:
+      - "**"
+    paths:
+      - "frontend/**"
+      - ".github/workflows/**"
+      - ".github/actions/**"
+env:
+  REGISTRY: ghcr.io
+jobs:
+  build-and-push-routine-tracker-frontend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/sahinakkaya/routine-tracker-frontend
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          file: frontend/Dockerfile
+          build-args: |
+            VITE_API_URL=https://routine-tracker-backend.sahinakkaya.dev
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

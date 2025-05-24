@@ -1,0 +1,1047 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API for managing habit and target trackers",
+        "title": "Habit \u0026 Target Tracker API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api",
+    "paths": {
+        "/dashboard": {
+            "get": {
+                "description": "Get trackers that are due for a specific date (defaults to today)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "General"
+                ],
+                "summary": "Get dashboard",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "2024-01-15",
+                        "description": "Date in YYYY-MM-DD format (defaults to today)",
+                        "name": "date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/trackers.DashboardResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/entries": {
+            "get": {
+                "description": "Retrieve all tracking entries",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "General"
+                ],
+                "summary": "Get all entries",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Entry"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/habit-trackers": {
+            "get": {
+                "description": "Retrieve all created habit trackers",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Habit Trackers"
+                ],
+                "summary": "Get all habit trackers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/habit.HabitTracker"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new habit tracker with specified configuration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Habit Trackers"
+                ],
+                "summary": "Create habit tracker",
+                "parameters": [
+                    {
+                        "description": "Habit tracker configuration",
+                        "name": "habit",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/habit.CreateHabitRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/habit.HabitTracker"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/habit-trackers/{id}": {
+            "get": {
+                "description": "Retrieve a specific habit tracker with all its details",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Habit Trackers"
+                ],
+                "summary": "Get habit tracker by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Habit Tracker ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/habit.HabitTracker"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a specific habit tracker (partial updates supported)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Habit Trackers"
+                ],
+                "summary": "Update habit tracker",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Habit Tracker ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated habit tracker data",
+                        "name": "habit",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/habit.UpdateHabitRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/habit.HabitTracker"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a specific habit tracker and all its associated entries",
+                "tags": [
+                    "Habit Trackers"
+                ],
+                "summary": "Delete habit tracker",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Habit Tracker ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/habit-trackers/{id}/entries": {
+            "post": {
+                "description": "Add a new entry to a specific habit tracker",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Habit Trackers"
+                ],
+                "summary": "Add habit entry",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Habit Tracker ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Entry data",
+                        "name": "entry",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.AddEntryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Entry"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/target-trackers": {
+            "get": {
+                "description": "Retrieve all created target trackers",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Target Trackers"
+                ],
+                "summary": "Get all target trackers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/target.TargetTracker"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new target tracker with specified configuration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Target Trackers"
+                ],
+                "summary": "Create target tracker",
+                "parameters": [
+                    {
+                        "description": "Target tracker configuration",
+                        "name": "target",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/target.CreateTargetRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/target.TargetTracker"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/target-trackers/{id}": {
+            "get": {
+                "description": "Retrieve a specific target tracker with all its details",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Target Trackers"
+                ],
+                "summary": "Get target tracker by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Target Tracker ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/target.TargetTracker"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a specific target tracker (partial updates supported)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Target Trackers"
+                ],
+                "summary": "Update target tracker",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Target Tracker ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated target tracker data",
+                        "name": "target",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/target.UpdateTargetRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/target.TargetTracker"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a specific target tracker and all its associated entries",
+                "tags": [
+                    "Target Trackers"
+                ],
+                "summary": "Delete target tracker",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Target Tracker ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/target-trackers/{id}/entries": {
+            "post": {
+                "description": "Add a new entry to a specific target tracker",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Target Trackers"
+                ],
+                "summary": "Add target entry",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Target Tracker ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Entry data",
+                        "name": "entry",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.AddEntryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Entry"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/trackers": {
+            "get": {
+                "description": "Retrieve all habit and target trackers",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "General"
+                ],
+                "summary": "Get all trackers (combined)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/trackers.TrackersResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/{type}-trackers/{id}/entries": {
+            "get": {
+                "description": "Get all entries for a specific tracker",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "General"
+                ],
+                "summary": "Get tracker entries",
+                "parameters": [
+                    {
+                        "enum": [
+                            "habit",
+                            "target"
+                        ],
+                        "type": "string",
+                        "description": "Tracker type",
+                        "name": "type",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Tracker ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Entry"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "habit.CreateHabitRequest": {
+            "type": "object",
+            "properties": {
+                "badHabit": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "due": {
+                    "$ref": "#/definitions/models.Due"
+                },
+                "goal": {
+                    "type": "number",
+                    "example": 8
+                },
+                "goalStreak": {
+                    "type": "integer",
+                    "example": 30
+                },
+                "reminders": {
+                    "$ref": "#/definitions/models.Reminder"
+                },
+                "startDate": {
+                    "description": "\"2024-01-01\" format",
+                    "type": "string",
+                    "example": "2024-01-01"
+                },
+                "timePeriod": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.TimePeriod"
+                        }
+                    ],
+                    "example": "per_day"
+                },
+                "trackerName": {
+                    "type": "string",
+                    "example": "Drink Water"
+                }
+            }
+        },
+        "habit.HabitTracker": {
+            "type": "object",
+            "properties": {
+                "badHabit": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2024-01-01T10:00:00Z"
+                },
+                "due": {
+                    "$ref": "#/definitions/models.Due"
+                },
+                "goal": {
+                    "description": "how many times",
+                    "type": "number",
+                    "example": 8
+                },
+                "goalStreak": {
+                    "description": "null or int",
+                    "type": "integer",
+                    "example": 30
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "reminders": {
+                    "$ref": "#/definitions/models.Reminder"
+                },
+                "startDate": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "timePeriod": {
+                    "description": "per day, week, month, year",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.TimePeriod"
+                        }
+                    ],
+                    "example": "per_day"
+                },
+                "trackerName": {
+                    "type": "string",
+                    "example": "Drink Water"
+                }
+            }
+        },
+        "habit.UpdateHabitRequest": {
+            "type": "object",
+            "properties": {
+                "badHabit": {
+                    "type": "boolean"
+                },
+                "due": {
+                    "$ref": "#/definitions/models.Due"
+                },
+                "goal": {
+                    "type": "number"
+                },
+                "goalStreak": {
+                    "type": "integer"
+                },
+                "reminders": {
+                    "$ref": "#/definitions/models.Reminder"
+                },
+                "startDate": {
+                    "type": "string"
+                },
+                "timePeriod": {
+                    "$ref": "#/definitions/models.TimePeriod"
+                },
+                "trackerName": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.AddEntryRequest": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "description": "optional, defaults to now. Supports both date (YYYY-MM-DD) and datetime (RFC3339) formats",
+                    "type": "string",
+                    "example": "2024-01-01T15:30:00Z"
+                },
+                "done": {
+                    "description": "For habit trackers",
+                    "type": "boolean"
+                },
+                "note": {
+                    "type": "string",
+                    "example": "Felt great today"
+                },
+                "value": {
+                    "description": "For target trackers",
+                    "type": "number"
+                }
+            }
+        },
+        "models.Due": {
+            "type": "object",
+            "properties": {
+                "intervalType": {
+                    "description": "\"day\", \"week\", \"month\", \"year\"",
+                    "type": "string",
+                    "example": "day"
+                },
+                "intervalValue": {
+                    "description": "every X days/weeks/etc",
+                    "type": "integer",
+                    "example": 3
+                },
+                "specificDays": {
+                    "description": "[\"sunday\", \"monday\", etc.]",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "sunday",
+                        "monday",
+                        "wednesday"
+                    ]
+                },
+                "type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.DueType"
+                        }
+                    ],
+                    "example": "specificDays"
+                }
+            }
+        },
+        "models.DueType": {
+            "type": "string",
+            "enum": [
+                "specificDays",
+                "interval"
+            ],
+            "x-enum-comments": {
+                "INTERVAL": "e.g., every 3 days/weeks/months/years",
+                "SPECIFIC_DAYS": "e.g., [\"sunday\", \"monday\", \"wednesday\"]"
+            },
+            "x-enum-varnames": [
+                "SPECIFIC_DAYS",
+                "INTERVAL"
+            ]
+        },
+        "models.Entry": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "example": "2024-01-01T10:00:00Z"
+                },
+                "date": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "done": {
+                    "description": "For habit trackers (true/false)",
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "note": {
+                    "type": "string",
+                    "example": "Felt great today"
+                },
+                "trackerId": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "type": {
+                    "description": "\"habit\" or \"target\"",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.TrackerType"
+                        }
+                    ],
+                    "example": "habit"
+                },
+                "value": {
+                    "description": "For target trackers",
+                    "type": "number"
+                }
+            }
+        },
+        "models.Reminder": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "times": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "models.TimePeriod": {
+            "type": "string",
+            "enum": [
+                "perDay",
+                "perWeek",
+                "perMonth",
+                "perYear"
+            ],
+            "x-enum-varnames": [
+                "PER_DAY",
+                "PER_WEEK",
+                "PER_MONTH",
+                "PER_YEAR"
+            ]
+        },
+        "models.TrackerType": {
+            "type": "string",
+            "enum": [
+                "habit",
+                "target"
+            ],
+            "x-enum-varnames": [
+                "HABIT",
+                "TARGET"
+            ]
+        },
+        "target.CreateTargetRequest": {
+            "type": "object",
+            "properties": {
+                "addToTotal": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "due": {
+                    "$ref": "#/definitions/models.Due"
+                },
+                "goalDate": {
+                    "description": "\"2024-12-31\" format",
+                    "type": "string",
+                    "example": "2024-12-31"
+                },
+                "goalValue": {
+                    "type": "number",
+                    "example": 5000
+                },
+                "reminders": {
+                    "$ref": "#/definitions/models.Reminder"
+                },
+                "startDate": {
+                    "description": "\"2024-01-01\" format",
+                    "type": "string",
+                    "example": "2024-01-01"
+                },
+                "startValue": {
+                    "type": "number",
+                    "example": 0
+                },
+                "trackerName": {
+                    "type": "string",
+                    "example": "Save Money"
+                }
+            }
+        },
+        "target.TargetTracker": {
+            "type": "object",
+            "properties": {
+                "addToTotal": {
+                    "description": "default false",
+                    "type": "boolean",
+                    "example": false
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2024-01-01T10:00:00Z"
+                },
+                "due": {
+                    "$ref": "#/definitions/models.Due"
+                },
+                "goalDate": {
+                    "type": "string",
+                    "example": "2024-12-31T00:00:00Z"
+                },
+                "goalValue": {
+                    "type": "number",
+                    "example": 5000
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "reminders": {
+                    "$ref": "#/definitions/models.Reminder"
+                },
+                "startDate": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "startValue": {
+                    "type": "number",
+                    "example": 0
+                },
+                "trackerName": {
+                    "type": "string",
+                    "example": "Save Money"
+                }
+            }
+        },
+        "target.UpdateTargetRequest": {
+            "type": "object",
+            "properties": {
+                "addToTotal": {
+                    "type": "boolean"
+                },
+                "due": {
+                    "$ref": "#/definitions/models.Due"
+                },
+                "goalDate": {
+                    "type": "string"
+                },
+                "goalValue": {
+                    "type": "number"
+                },
+                "reminders": {
+                    "$ref": "#/definitions/models.Reminder"
+                },
+                "startDate": {
+                    "type": "string"
+                },
+                "startValue": {
+                    "type": "number"
+                },
+                "trackerName": {
+                    "type": "string"
+                }
+            }
+        },
+        "trackers.DashboardResponse": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string",
+                    "example": "2024-01-01"
+                },
+                "habitTrackers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/habit.HabitTracker"
+                    }
+                },
+                "targetTrackers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/target.TargetTracker"
+                    }
+                }
+            }
+        },
+        "trackers.TrackersResponse": {
+            "type": "object",
+            "properties": {
+                "habitTrackers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/habit.HabitTracker"
+                    }
+                },
+                "targetTrackers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/target.TargetTracker"
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,708 @@
+basePath: /api
+definitions:
+  habit.CreateHabitRequest:
+    properties:
+      badHabit:
+        example: false
+        type: boolean
+      due:
+        $ref: '#/definitions/models.Due'
+      goal:
+        example: 8
+        type: number
+      goalStreak:
+        example: 30
+        type: integer
+      reminders:
+        $ref: '#/definitions/models.Reminder'
+      startDate:
+        description: '"2024-01-01" format'
+        example: "2024-01-01"
+        type: string
+      timePeriod:
+        allOf:
+        - $ref: '#/definitions/models.TimePeriod'
+        example: per_day
+      trackerName:
+        example: Drink Water
+        type: string
+    type: object
+  habit.HabitTracker:
+    properties:
+      badHabit:
+        example: false
+        type: boolean
+      createdAt:
+        example: "2024-01-01T10:00:00Z"
+        type: string
+      due:
+        $ref: '#/definitions/models.Due'
+      goal:
+        description: how many times
+        example: 8
+        type: number
+      goalStreak:
+        description: null or int
+        example: 30
+        type: integer
+      id:
+        example: 1
+        type: integer
+      reminders:
+        $ref: '#/definitions/models.Reminder'
+      startDate:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      timePeriod:
+        allOf:
+        - $ref: '#/definitions/models.TimePeriod'
+        description: per day, week, month, year
+        example: per_day
+      trackerName:
+        example: Drink Water
+        type: string
+    type: object
+  habit.UpdateHabitRequest:
+    properties:
+      badHabit:
+        type: boolean
+      due:
+        $ref: '#/definitions/models.Due'
+      goal:
+        type: number
+      goalStreak:
+        type: integer
+      reminders:
+        $ref: '#/definitions/models.Reminder'
+      startDate:
+        type: string
+      timePeriod:
+        $ref: '#/definitions/models.TimePeriod'
+      trackerName:
+        type: string
+    type: object
+  models.AddEntryRequest:
+    properties:
+      date:
+        description: optional, defaults to now. Supports both date (YYYY-MM-DD) and
+          datetime (RFC3339) formats
+        example: "2024-01-01T15:30:00Z"
+        type: string
+      done:
+        description: For habit trackers
+        type: boolean
+      note:
+        example: Felt great today
+        type: string
+      value:
+        description: For target trackers
+        type: number
+    type: object
+  models.Due:
+    properties:
+      intervalType:
+        description: '"day", "week", "month", "year"'
+        example: day
+        type: string
+      intervalValue:
+        description: every X days/weeks/etc
+        example: 3
+        type: integer
+      specificDays:
+        description: '["sunday", "monday", etc.]'
+        example:
+        - sunday
+        - monday
+        - wednesday
+        items:
+          type: string
+        type: array
+      type:
+        allOf:
+        - $ref: '#/definitions/models.DueType'
+        example: specificDays
+    type: object
+  models.DueType:
+    enum:
+    - specificDays
+    - interval
+    type: string
+    x-enum-comments:
+      INTERVAL: e.g., every 3 days/weeks/months/years
+      SPECIFIC_DAYS: e.g., ["sunday", "monday", "wednesday"]
+    x-enum-varnames:
+    - SPECIFIC_DAYS
+    - INTERVAL
+  models.Entry:
+    properties:
+      createdAt:
+        example: "2024-01-01T10:00:00Z"
+        type: string
+      date:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      done:
+        description: For habit trackers (true/false)
+        type: boolean
+      id:
+        example: 1
+        type: integer
+      note:
+        example: Felt great today
+        type: string
+      trackerId:
+        example: 1
+        type: integer
+      type:
+        allOf:
+        - $ref: '#/definitions/models.TrackerType'
+        description: '"habit" or "target"'
+        example: habit
+      value:
+        description: For target trackers
+        type: number
+    type: object
+  models.Reminder:
+    properties:
+      enabled:
+        type: boolean
+      times:
+        items:
+          type: string
+        type: array
+    type: object
+  models.TimePeriod:
+    enum:
+    - perDay
+    - perWeek
+    - perMonth
+    - perYear
+    type: string
+    x-enum-varnames:
+    - PER_DAY
+    - PER_WEEK
+    - PER_MONTH
+    - PER_YEAR
+  models.TrackerType:
+    enum:
+    - habit
+    - target
+    type: string
+    x-enum-varnames:
+    - HABIT
+    - TARGET
+  target.CreateTargetRequest:
+    properties:
+      addToTotal:
+        example: false
+        type: boolean
+      due:
+        $ref: '#/definitions/models.Due'
+      goalDate:
+        description: '"2024-12-31" format'
+        example: "2024-12-31"
+        type: string
+      goalValue:
+        example: 5000
+        type: number
+      reminders:
+        $ref: '#/definitions/models.Reminder'
+      startDate:
+        description: '"2024-01-01" format'
+        example: "2024-01-01"
+        type: string
+      startValue:
+        example: 0
+        type: number
+      trackerName:
+        example: Save Money
+        type: string
+    type: object
+  target.TargetTracker:
+    properties:
+      addToTotal:
+        description: default false
+        example: false
+        type: boolean
+      createdAt:
+        example: "2024-01-01T10:00:00Z"
+        type: string
+      due:
+        $ref: '#/definitions/models.Due'
+      goalDate:
+        example: "2024-12-31T00:00:00Z"
+        type: string
+      goalValue:
+        example: 5000
+        type: number
+      id:
+        example: 1
+        type: integer
+      reminders:
+        $ref: '#/definitions/models.Reminder'
+      startDate:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      startValue:
+        example: 0
+        type: number
+      trackerName:
+        example: Save Money
+        type: string
+    type: object
+  target.UpdateTargetRequest:
+    properties:
+      addToTotal:
+        type: boolean
+      due:
+        $ref: '#/definitions/models.Due'
+      goalDate:
+        type: string
+      goalValue:
+        type: number
+      reminders:
+        $ref: '#/definitions/models.Reminder'
+      startDate:
+        type: string
+      startValue:
+        type: number
+      trackerName:
+        type: string
+    type: object
+  trackers.DashboardResponse:
+    properties:
+      date:
+        example: "2024-01-01"
+        type: string
+      habitTrackers:
+        items:
+          $ref: '#/definitions/habit.HabitTracker'
+        type: array
+      targetTrackers:
+        items:
+          $ref: '#/definitions/target.TargetTracker'
+        type: array
+    type: object
+  trackers.TrackersResponse:
+    properties:
+      habitTrackers:
+        items:
+          $ref: '#/definitions/habit.HabitTracker'
+        type: array
+      targetTrackers:
+        items:
+          $ref: '#/definitions/target.TargetTracker'
+        type: array
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API for managing habit and target trackers
+  title: Habit & Target Tracker API
+  version: "1.0"
+paths:
+  /{type}-trackers/{id}/entries:
+    get:
+      description: Get all entries for a specific tracker
+      parameters:
+      - description: Tracker type
+        enum:
+        - habit
+        - target
+        in: path
+        name: type
+        required: true
+        type: string
+      - description: Tracker ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Entry'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Get tracker entries
+      tags:
+      - General
+  /dashboard:
+    get:
+      description: Get trackers that are due for a specific date (defaults to today)
+      parameters:
+      - description: Date in YYYY-MM-DD format (defaults to today)
+        example: "2024-01-15"
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/trackers.DashboardResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get dashboard
+      tags:
+      - General
+  /entries:
+    get:
+      description: Retrieve all tracking entries
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Entry'
+            type: array
+      summary: Get all entries
+      tags:
+      - General
+  /habit-trackers:
+    get:
+      description: Retrieve all created habit trackers
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/habit.HabitTracker'
+            type: array
+      summary: Get all habit trackers
+      tags:
+      - Habit Trackers
+    post:
+      consumes:
+      - application/json
+      description: Create a new habit tracker with specified configuration
+      parameters:
+      - description: Habit tracker configuration
+        in: body
+        name: habit
+        required: true
+        schema:
+          $ref: '#/definitions/habit.CreateHabitRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/habit.HabitTracker'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Create habit tracker
+      tags:
+      - Habit Trackers
+  /habit-trackers/{id}:
+    delete:
+      description: Delete a specific habit tracker and all its associated entries
+      parameters:
+      - description: Habit Tracker ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Delete habit tracker
+      tags:
+      - Habit Trackers
+    get:
+      description: Retrieve a specific habit tracker with all its details
+      parameters:
+      - description: Habit Tracker ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/habit.HabitTracker'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Get habit tracker by ID
+      tags:
+      - Habit Trackers
+    put:
+      consumes:
+      - application/json
+      description: Update a specific habit tracker (partial updates supported)
+      parameters:
+      - description: Habit Tracker ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated habit tracker data
+        in: body
+        name: habit
+        required: true
+        schema:
+          $ref: '#/definitions/habit.UpdateHabitRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/habit.HabitTracker'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Update habit tracker
+      tags:
+      - Habit Trackers
+  /habit-trackers/{id}/entries:
+    post:
+      consumes:
+      - application/json
+      description: Add a new entry to a specific habit tracker
+      parameters:
+      - description: Habit Tracker ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Entry data
+        in: body
+        name: entry
+        required: true
+        schema:
+          $ref: '#/definitions/models.AddEntryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Entry'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Add habit entry
+      tags:
+      - Habit Trackers
+  /target-trackers:
+    get:
+      description: Retrieve all created target trackers
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/target.TargetTracker'
+            type: array
+      summary: Get all target trackers
+      tags:
+      - Target Trackers
+    post:
+      consumes:
+      - application/json
+      description: Create a new target tracker with specified configuration
+      parameters:
+      - description: Target tracker configuration
+        in: body
+        name: target
+        required: true
+        schema:
+          $ref: '#/definitions/target.CreateTargetRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/target.TargetTracker'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Create target tracker
+      tags:
+      - Target Trackers
+  /target-trackers/{id}:
+    delete:
+      description: Delete a specific target tracker and all its associated entries
+      parameters:
+      - description: Target Tracker ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Delete target tracker
+      tags:
+      - Target Trackers
+    get:
+      description: Retrieve a specific target tracker with all its details
+      parameters:
+      - description: Target Tracker ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/target.TargetTracker'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Get target tracker by ID
+      tags:
+      - Target Trackers
+    put:
+      consumes:
+      - application/json
+      description: Update a specific target tracker (partial updates supported)
+      parameters:
+      - description: Target Tracker ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated target tracker data
+        in: body
+        name: target
+        required: true
+        schema:
+          $ref: '#/definitions/target.UpdateTargetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/target.TargetTracker'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Update target tracker
+      tags:
+      - Target Trackers
+  /target-trackers/{id}/entries:
+    post:
+      consumes:
+      - application/json
+      description: Add a new entry to a specific target tracker
+      parameters:
+      - description: Target Tracker ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Entry data
+        in: body
+        name: entry
+        required: true
+        schema:
+          $ref: '#/definitions/models.AddEntryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Entry'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Add target entry
+      tags:
+      - Target Trackers
+  /trackers:
+    get:
+      description: Retrieve all habit and target trackers
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/trackers.TrackersResponse'
+      summary: Get all trackers (combined)
+      tags:
+      - General
+swagger: "2.0"
