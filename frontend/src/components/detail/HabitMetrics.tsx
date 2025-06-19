@@ -1,5 +1,4 @@
 // src/components/detail/HabitMetrics.tsx
-import React from 'react';
 import type { HabitTracker } from '../../types';
 import type { StreakData, GoalProgress, BarChartItem } from './habitUtils';
 

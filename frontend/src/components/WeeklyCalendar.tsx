@@ -1,5 +1,5 @@
 // src/components/WeeklyCalendar.tsx - Mobile-style horizontal calendar
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 interface WeeklyCalendarProps {
   selectedDate: Date;

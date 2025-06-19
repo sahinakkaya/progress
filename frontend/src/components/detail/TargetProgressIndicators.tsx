@@ -1,5 +1,4 @@
 // src/components/detail/TargetProgressIndicators.tsx
-import React from 'react';
 import type { TargetTracker } from '../../types';
 import type { TargetMetrics } from './targetUtils';
 

@@ -1,13 +1,11 @@
 // src/components/forms/CreateHabitForm.tsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, X } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { habitApi } from '../../services/api';
 import type { CreateHabitRequest, Due } from '../../types';
 
@@ -96,7 +94,7 @@ export default function CreateHabitForm({ open, onOpenChange, onSuccess }: Creat
         }
         : {
           type: 'interval',
-          intervalType: formData.intervalType,
+          intervalType: formData.intervalType as 'day' | 'week' | 'month',
           intervalValue: parseInt(formData.intervalValue),
         };
 

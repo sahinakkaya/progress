@@ -1,7 +1,7 @@
 // src/components/detail/HabitDetailPage.tsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Settings, BarChart3, Calendar, FileText } from 'lucide-react';
@@ -232,9 +232,6 @@ export default function HabitDetailPage() {
   }
 
   // Calculate stats and metrics
-  const totalEntries = entries.length;
-  const completedEntries = entries.filter(entry => entry.done).length;
-  const completionRate = totalEntries > 0 ? Math.round((completedEntries / totalEntries) * 100) : 0;
   
   // Calculate current streak (simple version for header)
   const sortedEntries = [...entries].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -277,10 +274,6 @@ export default function HabitDetailPage() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <HabitHeader
           habit={habit}
-          totalEntries={totalEntries}
-          completedEntries={completedEntries}
-          completionRate={completionRate}
-          currentStreak={currentStreak}
           onBack={() => navigate('/dashboard')}
           onDelete={handleDelete}
         />

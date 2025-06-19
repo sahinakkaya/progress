@@ -1,5 +1,4 @@
 // src/components/detail/TargetAddEntryModal.tsx
-import React from 'react';
 import { DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogOverlay, DialogPortal } from '@/components/ui/dialog';
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,7 @@ interface TargetAddEntryModalProps {
     note: string;
     date: string;
   };
-  onUpdateEntry: (updates: Partial<typeof newEntry>) => void;
+  onUpdateEntry: (updates: Partial<{ value: string; note: string; date: string; }>) => void;
   onSubmit: () => void;
   onCancel: () => void;
 }

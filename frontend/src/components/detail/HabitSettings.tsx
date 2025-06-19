@@ -1,11 +1,10 @@
 // src/components/detail/HabitSettings.tsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
 import { Settings, Trash2, AlertTriangle, Check, Clock } from 'lucide-react';
 import { habitApi } from '../../services/api';
 import type { HabitTracker } from '../../types';
@@ -70,7 +69,7 @@ export default function HabitSettings({ habit, onUpdate, onDelete }: HabitSettin
           timePeriod: newFormData.timePeriod,
           startDate: newFormData.startDate,
           badHabit: newFormData.badHabit,
-          goalStreak: newFormData.goalStreak || undefined,
+          goalStreak: newFormData.goalStreak ? parseInt(newFormData.goalStreak.toString()) : undefined,
           due: newFormData.dueType === 'specificDays'
             ? {
               type: 'specificDays' as const,
@@ -289,7 +288,7 @@ export default function HabitSettings({ habit, onUpdate, onDelete }: HabitSettin
                   <Label>Period</Label>
                   <select
                     value={formData.intervalType}
-                    onChange={(e) => updateFormData({ intervalType: e.target.value })}
+                    onChange={(e) => updateFormData({ intervalType: e.target.value as 'day' | 'week' | 'month' })}
                     className="w-full h-10 px-3 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     {INTERVAL_TYPES.map(type => (

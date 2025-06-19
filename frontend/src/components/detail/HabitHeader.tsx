@@ -1,27 +1,17 @@
 // src/components/detail/HabitHeader.tsx
-import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Target, Trash2 } from 'lucide-react';
 import type { HabitTracker } from '../../types';
 
 interface HabitHeaderProps {
   habit: HabitTracker;
-  totalEntries: number;
-  completedEntries: number;
-  completionRate: number;
-  currentStreak: number;
   onBack: () => void;
   onDelete: () => void;
 }
 
 export default function HabitHeader({ 
   habit, 
-  totalEntries, 
-  completedEntries, 
-  completionRate, 
-  currentStreak,
   onBack, 
   onDelete 
 }: HabitHeaderProps) {

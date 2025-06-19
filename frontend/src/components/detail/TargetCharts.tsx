@@ -1,14 +1,6 @@
 // src/components/detail/TargetCharts.tsx
 
-import React from 'react';
-
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-import { Badge } from '@/components/ui/badge';
-
-import { Progress } from '@/components/ui/progress';
-
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 
 import type { TargetTracker, Entry } from '../../types';
 
@@ -294,50 +286,3 @@ export default function TargetCharts({ target, entries, projectedDate }: TargetC
 
 }
 
-// Helper function to get weekly progress data
-
-function getWeeklyProgressData(entries: Entry[], target: TargetTracker) {
-
-  const weekMap = new Map<string, { totalValue: number; entries: number }>();
-
-  entries.forEach(entry => {
-
-    const date = new Date(entry.date);
-
-    const weekStart = new Date(date);
-
-    const day = weekStart.getDay();
-
-    const daysToSubtract = day === 0 ? 6 : day - 1;
-
-    weekStart.setDate(date.getDate() - daysToSubtract);
-
-    const weekKey = weekStart.toISOString().split('T')[0];
-
-    if (!weekMap.has(weekKey)) {
-
-      weekMap.set(weekKey, { totalValue: 0, entries: 0 });
-
-    }
-
-    const week = weekMap.get(weekKey)!;
-
-    week.entries++;
-
-    week.totalValue += entry.value || 0;
-
-  });
-
-  return Array.from(weekMap.entries())
-
-    .sort(([a], [b]) => a.localeCompare(b))
-
-    .map(([key, data]) => ({
-
-      week: new Date(key).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-
-      ...data
-
-    }));
-
-}

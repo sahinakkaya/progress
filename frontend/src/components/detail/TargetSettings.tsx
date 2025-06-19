@@ -1,5 +1,5 @@
 // src/components/detail/TargetSettings.tsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -282,7 +282,7 @@ export default function TargetSettings({ target, onUpdate, onDelete }: TargetSet
                   <Label>Period</Label>
                   <select
                     value={formData.intervalType}
-                    onChange={(e) => updateFormData({ intervalType: e.target.value })}
+                    onChange={(e) => updateFormData({ intervalType: e.target.value as 'day' | 'week' | 'month' })}
                     className="w-full h-10 px-3 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     {INTERVAL_TYPES.map(type => (

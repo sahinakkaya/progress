@@ -186,7 +186,6 @@ export const generateBarChartData = (
   isBadHabit: boolean = false
 ): BarChartItem[] => {
   if (timePeriod === 'perDay') {
-    const days = [];
     // Show up to 20 days or all days since habit start (whichever is less)
     const maxDays = 20;
     const daysSinceStart = Math.ceil((today.getTime() - habitStartDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -219,7 +218,6 @@ export const generateBarChartData = (
     // Second pass: add maxHeight to all items
     return dayData.map(item => ({ ...item, maxHeight }));
   } else if (timePeriod === 'perMonth') {
-    const months = [];
     // Show up to 12 months or all months since habit start (whichever is less)
     const maxMonths = 12;
     const habitStartMonth = new Date(habitStartDate.getFullYear(), habitStartDate.getMonth(), 1);
@@ -257,7 +255,6 @@ export const generateBarChartData = (
     return monthData.map(item => ({ ...item, maxHeight }));
   } else {
     // Weekly - show up to 16 weeks or all weeks since habit start
-    const weeks = [];
     const maxWeeks = 16;
     const weeksSinceStart = Math.ceil((today.getTime() - habitStartDate.getTime()) / (1000 * 60 * 60 * 24 * 7));
     const weeksToShow = Math.min(maxWeeks, weeksSinceStart + 1);

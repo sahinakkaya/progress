@@ -1,5 +1,4 @@
 // src/components/detail/TargetPaceSection.tsx
-import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import type { TargetTracker } from '../../types';
 import type { TargetMetrics } from './targetUtils';

@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Target, Calendar, Plus, Loader2, Settings, BarChart } from 'lucide-react';
-import { habitApi, targetApi } from '../services/api';
-import type { HabitTracker, TargetTracker, AddEntryRequest, Entry } from '../types';
+import { habitApi } from '../services/api';
+import type { HabitTracker, TargetTracker, Entry } from '../types';
 import { useDashboard, useDueCounts } from '../hooks/useDashboard';
 import WeeklyCalendar from './WeeklyCalendar';
 import CreateHabitForm from './forms/CreateHabitForm';
@@ -13,12 +13,10 @@ import CreateTargetForm from './forms/CreateTargetForm';
 
 interface HabitCardProps {
   habit: HabitTracker;
-  onEntryAdded: () => void;
 }
 
-function HabitCard({ habit, onEntryAdded }: HabitCardProps) {
+function HabitCard({ habit }: HabitCardProps) {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
   const [entries, setEntries] = useState<Entry[]>([]);
 
   // Fetch entries for this habit
@@ -35,27 +33,6 @@ function HabitCard({ habit, onEntryAdded }: HabitCardProps) {
     fetchEntries();
   }, [habit.id]);
 
-  const handleToggleComplete = async () => {
-    setLoading(true);
-    try {
-      const entryData: AddEntryRequest = {
-        done: true,
-        date: new Date().toISOString(),
-        note: 'Completed via dashboard'
-      };
-
-      await habitApi.addEntry(habit.id, entryData);
-      onEntryAdded();
-      
-      // Refresh entries
-      const habitEntries = await habitApi.getEntries(habit.id);
-      setEntries(habitEntries);
-    } catch (error) {
-      console.error('Failed to add habit entry:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Calculate period-based status
   const getHabitStatus = () => {
@@ -200,35 +177,11 @@ function HabitCard({ habit, onEntryAdded }: HabitCardProps) {
 
 interface TargetCardProps {
   target: TargetTracker;
-  onEntryAdded: () => void;
 }
 
-function TargetCard({ target, onEntryAdded }: TargetCardProps) {
+function TargetCard({ target }: TargetCardProps) {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [quickValue, setQuickValue] = useState('');
 
-  const handleQuickEntry = async () => {
-    const value = parseFloat(quickValue);
-    if (isNaN(value) || value <= 0) return;
-
-    setLoading(true);
-    try {
-      const entryData: AddEntryRequest = {
-        value,
-        date: new Date().toISOString(),
-        note: 'Quick entry from dashboard'
-      };
-
-      await targetApi.addEntry(target.id, entryData);
-      setQuickValue('');
-      onEntryAdded();
-    } catch (error) {
-      console.error('Failed to add target entry:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const currentValue = target.currentValue ?? target.startValue;
   const goalDate = new Date(target.goalDate).toLocaleDateString('en-US', { 
@@ -275,7 +228,7 @@ export default function Dashboard() {
   const [showCreateTarget, setShowCreateTarget] = useState(false);
   
   const { dashboard, loading, error, refetch, selectedDate, setSelectedDate } = useDashboard();
-  const { dueCounts, totalDue } = useDueCounts(selectedDate);
+  const { dueCounts } = useDueCounts(selectedDate);
 
   const handleEntryAdded = () => {
     refetch();
@@ -334,7 +287,6 @@ export default function Dashboard() {
           <HabitCard
             key={habit.id}
             habit={habit}
-            onEntryAdded={handleEntryAdded}
           />
         ))}
 
@@ -343,7 +295,6 @@ export default function Dashboard() {
           <TargetCard
             key={target.id}
             target={target}
-            onEntryAdded={handleEntryAdded}
           />
         ))}
 

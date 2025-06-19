@@ -1,5 +1,4 @@
 // src/components/detail/TargetHeader.tsx
-import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Target, Trash2, Plus } from 'lucide-react';
 import type { TargetTracker } from '../../types';
