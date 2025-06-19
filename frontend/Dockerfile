@@ -7,8 +7,9 @@ WORKDIR /app
 # Copy package.json and pnpm-lock.yaml to the working directory
 COPY package.json pnpm-lock.yaml ./
 
-# Install pnpm
-RUN npm install -g pnpm
+# Install pnpm and configure global directory
+RUN npm install -g pnpm && \
+    pnpm config set global-bin-dir /usr/local/bin
 
 # Install dependencies using pnpm
 RUN pnpm install --frozen-lockfile
