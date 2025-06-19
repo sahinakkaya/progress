@@ -40,7 +40,7 @@ jobs:
           context: frontend
           file: frontend/Dockerfile
           build-args: |
-            VITE_API_URL=https://progress-backend.sahinakkaya.dev
+            VITE_API_URL=https://progress-backend.sahinakkaya.dev/api
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
