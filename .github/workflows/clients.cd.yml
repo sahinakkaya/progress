@@ -20,6 +20,15 @@ jobs:
     permissions:
       contents: read
       packages: write
+    strategy:
+      matrix:
+        deployment:
+          - name: progress
+            api_url: https://progress-backend.sahinakkaya.dev/api
+            image_suffix: ""
+          - name: my-progress
+            api_url: https://my-progress-backend.sahinakkaya.dev/api
+            image_suffix: "-my-progress"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -33,14 +42,14 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/sahinakkaya/progress-frontend
+          images: ${{ env.REGISTRY }}/sahinakkaya/progress-frontend${{ matrix.deployment.image_suffix }}
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: frontend
           file: frontend/Dockerfile
           build-args: |
-            VITE_API_URL=https://progress-backend.sahinakkaya.dev/api
+            VITE_API_URL=${{ matrix.deployment.api_url }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
