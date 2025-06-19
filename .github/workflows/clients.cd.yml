@@ -27,7 +27,7 @@ jobs:
             api_url: https://progress-backend.sahinakkaya.dev/api
             image_suffix: ""
           - name: my-progress
-            api_url: https://my-progress-backend.sahinakkaya.dev/api
+            api_url: https://my-progress.sahinakkaya.dev/api
             image_suffix: "-my-progress"
     steps:
       - name: Checkout repository
