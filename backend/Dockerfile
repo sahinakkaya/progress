@@ -36,7 +36,7 @@ RUN go install github.com/swaggo/swag/cmd/swag@latest
 RUN swag init
 
 # Build the application
-RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o routine-tracker main.go
+RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o progress main.go
 
 ################################
 # PRODUCTION
@@ -50,7 +50,7 @@ RUN apk --no-cache add ca-certificates sqlite
 WORKDIR /app
 
 # Copy the binary from builder
-COPY --from=builder /app/routine-tracker .
+COPY --from=builder /app/progress .
 
 # Copy any static files if needed (docs, etc.)
 COPY --from=builder /app/docs ./docs
@@ -62,4 +62,4 @@ RUN mkdir -p /app/data
 EXPOSE 8080
 
 # Run the application
-CMD ["./routine-tracker"]
+CMD ["./progress"]

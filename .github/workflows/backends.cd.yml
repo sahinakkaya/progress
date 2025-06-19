@@ -15,7 +15,7 @@ on:
 env:
   REGISTRY: ghcr.io
 jobs:
-  build-and-push-routine-tracker-backend:
+  build-and-push-progress-backend:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -33,7 +33,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/sahinakkaya/routine-tracker-backend
+          images: ${{ env.REGISTRY }}/sahinakkaya/progress-backend
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
