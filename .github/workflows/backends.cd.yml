@@ -42,3 +42,13 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+      - name: Notify Server After Package Push
+        run: |
+          curl -X POST https://sahinakkaya.dev/hookpoint/ \
+            -H "X-Hub-Signature-256: sha256=$(echo -n "$BODY" | openssl dgst -sha256 -hmac "$APP_KEY" | sed 's/^.* //')" \
+            -H "X-GitHub-Event: package" \
+            -H "Content-Type: application/json" \
+            -d '{"package": "progress"}'
+        env:
+          BODY: '{"package": "progress"}'
+          APP_KEY: ${{ secrets.APP_KEY }}
