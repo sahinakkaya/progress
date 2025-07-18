@@ -43,14 +43,14 @@ export default function TargetProgressIndicators({ target, metrics }: TargetProg
               stroke="rgb(34, 197, 94)"
               strokeWidth="6"
               fill="transparent"
-              strokeDasharray={`${(displayPercentage / 100) * 250.8} 250.8`}
+              strokeDasharray={`${Math.max((displayPercentage / 100) * 295.3, 3)} 295.3`}
               strokeLinecap="round"
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <div className="text-sm text-gray-300 ">Current</div>
             <span className="text-md font-bold text-green-400">
-              {currentValue.toFixed(1)}
+              {(currentValue - target.startValue).toFixed(1)}
             </span>
             <span className="text-sm text-gray-400">
               {remainingValue.toFixed(1)} to go
