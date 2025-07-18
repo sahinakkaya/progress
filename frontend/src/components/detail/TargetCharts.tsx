@@ -218,6 +218,27 @@ export default function TargetCharts({ target, entries, projectedDate, lineVisib
     return baseTicks.sort((a, b) => a - b);
   };
 
+  // Smart date formatter that includes year only when different from current year
+  const formatTickDate = (value: number) => {
+    const date = new Date(value);
+    const dateYear = date.getFullYear();
+    const currentYear = new Date().getFullYear();
+    
+    // Only show year if it's different from current year
+    if (dateYear !== currentYear) {
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+      });
+    }
+    
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
   if (progressData.length === 0) {
 
     return (
@@ -291,7 +312,7 @@ export default function TargetCharts({ target, entries, projectedDate, lineVisib
               tick={{ fontSize: 10, fill: 'rgb(156, 163, 175)' }}
               axisLine={false}
               tickLine={false}
-              tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              tickFormatter={formatTickDate}
             />
 
             <YAxis
