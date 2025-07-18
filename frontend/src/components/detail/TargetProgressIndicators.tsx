@@ -50,7 +50,7 @@ export default function TargetProgressIndicators({ target, metrics }: TargetProg
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <div className="text-sm text-gray-300 ">Current</div>
             <span className="text-md font-bold text-green-400">
-              {(currentValue - target.startValue).toFixed(1)}
+              {currentValue.toFixed(1)}
             </span>
             <span className="text-sm text-gray-400">
               {remainingValue.toFixed(1)} to go
