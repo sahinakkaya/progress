@@ -27,7 +27,7 @@ func GetTargetTrackers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Calculate current values for all target trackers
+	// Calculate current values and adjust start values for all target trackers
 	for i := range targets {
 		currentValue, err := database.CalculateCurrentValue(&targets[i])
 		if err != nil {
@@ -35,6 +35,17 @@ func GetTargetTrackers(w http.ResponseWriter, r *http.Request) {
 			currentValue = targets[i].StartValue
 		}
 		targets[i].CurrentValue = &currentValue
+
+		// Set original start value (always the database value)
+		targets[i].OriginalStartValue = targets[i].StartValue
+
+		// Adjust start value if UseActualBounds is true
+		if targets[i].UseActualBounds {
+			adjustedStartValue, err := database.GetAdjustedStartValue(&targets[i])
+			if err == nil {
+				targets[i].StartValue = adjustedStartValue
+			}
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -72,6 +83,17 @@ func GetTargetTracker(w http.ResponseWriter, r *http.Request) {
 		currentValue = tracker.StartValue
 	}
 	tracker.CurrentValue = &currentValue
+
+	// Set original start value (always the database value)
+	tracker.OriginalStartValue = tracker.StartValue
+
+	// Adjust start value if UseActualBounds is true
+	if tracker.UseActualBounds {
+		adjustedStartValue, err := database.GetAdjustedStartValue(tracker)
+		if err == nil {
+			tracker.StartValue = adjustedStartValue
+		}
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(tracker)
@@ -117,15 +139,16 @@ func CreateTargetTracker(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tracker := target.TargetTracker{
-		TrackerName: req.TrackerName,
-		StartValue:  req.StartValue,
-		GoalValue:   req.GoalValue,
-		StartDate:   startDate,
-		GoalDate:    goalDate,
-		AddToTotal:  req.AddToTotal,
-		Due:         req.Due,
-		Reminders:   reminders,
-		CreatedAt:   time.Now(),
+		TrackerName:     req.TrackerName,
+		StartValue:      req.StartValue,
+		GoalValue:       req.GoalValue,
+		StartDate:       startDate,
+		GoalDate:        goalDate,
+		AddToTotal:      req.AddToTotal,
+		UseActualBounds: false, // Default to false for new targets
+		Due:             req.Due,
+		Reminders:       reminders,
+		CreatedAt:       time.Now(),
 	}
 
 	created, err := database.CreateTargetTracker(tracker)

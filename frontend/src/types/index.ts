@@ -21,12 +21,14 @@ export interface HabitTracker {
 export interface TargetTracker {
   id: number;
   trackerName: string;
-  startValue: number;
+  startValue: number; // Adjusted value when useActualBounds is true
+  originalStartValue: number; // Always the original user-set value
   goalValue: number;
   currentValue?: number;
   startDate: string;
   goalDate: string;
   addToTotal: boolean;
+  useActualBounds: boolean;
   due: Due;
   createdAt: string;
   updatedAt: string;

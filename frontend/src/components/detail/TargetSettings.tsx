@@ -37,11 +37,12 @@ export default function TargetSettings({ target, onUpdate, onDelete }: TargetSet
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
   const [formData, setFormData] = useState({
     trackerName: target.trackerName,
-    startValue: target.startValue.toString(),
+    startValue: target.originalStartValue.toString(),
     goalValue: target.goalValue.toString(),
     startDate: new Date(target.startDate).toISOString().split('T')[0],
     goalDate: new Date(target.goalDate).toISOString().split('T')[0],
     addToTotal: target.addToTotal,
+    useActualBounds: target.useActualBounds,
     dueType: target.due.type,
     specificDays: target.due.specificDays || [],
     intervalType: target.due.intervalType || 'day',
@@ -64,6 +65,7 @@ export default function TargetSettings({ target, onUpdate, onDelete }: TargetSet
           startDate: newFormData.startDate,
           goalDate: newFormData.goalDate,
           addToTotal: newFormData.addToTotal,
+          useActualBounds: newFormData.useActualBounds,
           due: newFormData.dueType === 'specificDays' 
             ? {
                 type: 'specificDays' as const,
@@ -222,6 +224,21 @@ export default function TargetSettings({ target, onUpdate, onDelete }: TargetSet
             <Label>Add to total (cumulative progress)</Label>
           </div>
 
+          {/* Use Actual Bounds Toggle */}
+          <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-md">
+            <Switch
+              checked={formData.useActualBounds}
+              onCheckedChange={(checked) => updateFormData({ useActualBounds: checked })}
+            />
+            <div className="flex-1">
+              <Label>Use actual data bounds for trend calculations</Label>
+              <p className="text-sm text-gray-600 mt-1">
+                When enabled, trend lines will start from your actual progress bounds instead of the original start value. 
+                This provides more realistic projections when your progress differs from the planned baseline.
+              </p>
+            </div>
+          </div>
+
           {/* Due Schedule */}
           <div className="space-y-4">
             <Label>When should you work on this target?</Label>
@@ -308,6 +325,7 @@ export default function TargetSettings({ target, onUpdate, onDelete }: TargetSet
                   : `Every ${formData.intervalValue} ${formData.intervalType}(s)`
               }</p>
               <p><strong>Progress Type:</strong> {formData.addToTotal ? 'Cumulative (add each entry)' : 'Latest value only'}</p>
+              <p><strong>Trend Calculation:</strong> {formData.useActualBounds ? 'Uses actual data bounds' : 'Uses original start value'}</p>
               {daysUntilGoal > 0 && <p><strong>Days Remaining:</strong> {daysUntilGoal} days</p>}
             </div>
           </div>

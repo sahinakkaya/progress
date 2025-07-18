@@ -12,14 +12,14 @@ func CreateTargetTracker(t target.TargetTracker) (*target.TargetTracker, error) 
 
 	query := `
         INSERT INTO target_trackers (
-            tracker_name, start_value, goal_value, start_date, goal_date, add_to_total,
+            tracker_name, start_value, goal_value, start_date, goal_date, add_to_total, use_actual_bounds,
             due_type, due_specific_days, due_interval_type, due_interval_value,
             reminder_times, reminder_enabled
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
 
 	result, err := DB.Exec(query,
-		t.TrackerName, t.StartValue, t.GoalValue, t.StartDate, t.GoalDate, t.AddToTotal,
+		t.TrackerName, t.StartValue, t.GoalValue, t.StartDate, t.GoalDate, t.AddToTotal, t.UseActualBounds,
 		t.Due.Type, string(dueSpecificDays), t.Due.IntervalType, t.Due.IntervalValue,
 		string(reminderTimes), t.Reminders.Enabled,
 	)
@@ -41,7 +41,7 @@ func CreateTargetTracker(t target.TargetTracker) (*target.TargetTracker, error) 
 
 func GetAllTargetTrackers() ([]target.TargetTracker, error) {
 	query := `
-        SELECT id, tracker_name, start_value, goal_value, start_date, goal_date, add_to_total,
+        SELECT id, tracker_name, start_value, goal_value, start_date, goal_date, add_to_total, use_actual_bounds,
                due_type, due_specific_days, due_interval_type, due_interval_value,
                reminder_times, reminder_enabled, created_at
         FROM target_trackers ORDER BY created_at DESC
@@ -60,7 +60,7 @@ func GetAllTargetTrackers() ([]target.TargetTracker, error) {
 		var dueSpecificDaysJSON, reminderTimesJSON string
 
 		err := rows.Scan(
-			&t.ID, &t.TrackerName, &t.StartValue, &t.GoalValue, &t.StartDate, &t.GoalDate, &t.AddToTotal,
+			&t.ID, &t.TrackerName, &t.StartValue, &t.GoalValue, &t.StartDate, &t.GoalDate, &t.AddToTotal, &t.UseActualBounds,
 			&t.Due.Type, &dueSpecificDaysJSON, &t.Due.IntervalType, &t.Due.IntervalValue,
 			&reminderTimesJSON, &t.Reminders.Enabled, &t.CreatedAt,
 		)
@@ -81,7 +81,7 @@ func GetAllTargetTrackers() ([]target.TargetTracker, error) {
 func GetTargetTrackerByID(id int) (*target.TargetTracker, error) {
 
 	query := `
-        SELECT id, tracker_name, start_value, goal_value, start_date, goal_date, add_to_total,
+        SELECT id, tracker_name, start_value, goal_value, start_date, goal_date, add_to_total, use_actual_bounds,
                due_type, due_specific_days, due_interval_type, due_interval_value,
                reminder_times, reminder_enabled, created_at
         FROM target_trackers WHERE id = ?
@@ -90,7 +90,7 @@ func GetTargetTrackerByID(id int) (*target.TargetTracker, error) {
 	var dueSpecificDaysJSON, reminderTimesJSON string
 
 	err := DB.QueryRow(query, id).Scan(
-		&t.ID, &t.TrackerName, &t.StartValue, &t.GoalValue, &t.StartDate, &t.GoalDate, &t.AddToTotal,
+		&t.ID, &t.TrackerName, &t.StartValue, &t.GoalValue, &t.StartDate, &t.GoalDate, &t.AddToTotal, &t.UseActualBounds,
 		&t.Due.Type, &dueSpecificDaysJSON, &t.Due.IntervalType, &t.Due.IntervalValue,
 		&reminderTimesJSON, &t.Reminders.Enabled, &t.CreatedAt,
 	)
@@ -140,6 +140,9 @@ func UpdateTargetTracker(id int, t target.UpdateTargetRequest) error {
 	if t.AddToTotal != nil {
 		current.AddToTotal = *t.AddToTotal
 	}
+	if t.UseActualBounds != nil {
+		current.UseActualBounds = *t.UseActualBounds
+	}
 	if t.Due != nil {
 		current.Due = *t.Due
 	}
@@ -153,14 +156,14 @@ func UpdateTargetTracker(id int, t target.UpdateTargetRequest) error {
 
 	query := `
         UPDATE target_trackers SET
-            tracker_name = ?, start_value = ?, goal_value = ?, start_date = ?, goal_date = ?, add_to_total = ?,
+            tracker_name = ?, start_value = ?, goal_value = ?, start_date = ?, goal_date = ?, add_to_total = ?, use_actual_bounds = ?,
             due_type = ?, due_specific_days = ?, due_interval_type = ?, due_interval_value = ?,
             reminder_times = ?, reminder_enabled = ?
         WHERE id = ?
     `
 
 	_, err = DB.Exec(query,
-		current.TrackerName, current.StartValue, current.GoalValue, current.StartDate, current.GoalDate, current.AddToTotal,
+		current.TrackerName, current.StartValue, current.GoalValue, current.StartDate, current.GoalDate, current.AddToTotal, current.UseActualBounds,
 		current.Due.Type, string(dueSpecificDays), current.Due.IntervalType, current.Due.IntervalValue,
 		string(reminderTimes), current.Reminders.Enabled, id,
 	)
@@ -210,4 +213,62 @@ func CalculateCurrentValue(tracker *target.TargetTracker) (float64, error) {
 		}
 		return tracker.StartValue, nil
 	}
+}
+
+// GetAdjustedStartValue returns the adjusted start value based on UseActualBounds setting
+func GetAdjustedStartValue(tracker *target.TargetTracker) (float64, error) {
+	if !tracker.UseActualBounds {
+		return tracker.StartValue, nil
+	}
+
+	entries, err := GetEntriesByTracker(tracker.ID, "target")
+	if err != nil {
+		return tracker.StartValue, err
+	}
+
+	if len(entries) == 0 {
+		return tracker.StartValue, nil
+	}
+
+	// Calculate all progress values
+	var allValues []float64
+	if tracker.AddToTotal {
+		// For additive targets, calculate cumulative values
+		cumulative := tracker.StartValue
+		for i := len(entries) - 1; i >= 0; i-- { // Process in chronological order
+			cumulative += entries[i].Value
+			allValues = append(allValues, cumulative)
+		}
+	} else {
+		// For replacement targets, use actual entry values
+		for _, entry := range entries {
+			allValues = append(allValues, entry.Value)
+		}
+	}
+
+	// Find min and max values
+	minValue := allValues[0]
+	maxValue := allValues[0]
+	for _, value := range allValues {
+		if value < minValue {
+			minValue = value
+		}
+		if value > maxValue {
+			maxValue = value
+		}
+	}
+
+	// For increasing targets (startValue < goalValue), use the lower bound
+	// For decreasing targets (startValue > goalValue), use the upper bound
+	if tracker.StartValue < tracker.GoalValue {
+		if minValue < tracker.StartValue {
+			return minValue, nil
+		}
+	} else {
+		if maxValue > tracker.StartValue {
+			return maxValue, nil
+		}
+	}
+
+	return tracker.StartValue, nil
 }

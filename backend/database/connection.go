@@ -52,6 +52,7 @@ func createTables() error {
         start_date DATETIME NOT NULL,
         goal_date DATETIME NOT NULL,
         add_to_total BOOLEAN DEFAULT FALSE,
+        use_actual_bounds BOOLEAN DEFAULT FALSE,
         due_type TEXT NOT NULL,
         due_specific_days TEXT,
         due_interval_type TEXT,
@@ -82,6 +83,21 @@ func createTables() error {
     }
     
     log.Println("📋 Database tables created/verified")
+    return runMigrations()
+}
+
+func runMigrations() error {
+    // Check if use_actual_bounds column exists, if not add it
+    _, err := DB.Exec("SELECT use_actual_bounds FROM target_trackers LIMIT 1")
+    if err != nil {
+        // Column doesn't exist, add it
+        _, err := DB.Exec("ALTER TABLE target_trackers ADD COLUMN use_actual_bounds BOOLEAN DEFAULT FALSE")
+        if err != nil {
+            return err
+        }
+        log.Println("📋 Added use_actual_bounds column to target_trackers table")
+    }
+    
     return nil
 }
 
