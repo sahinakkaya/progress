@@ -25,6 +25,11 @@ export default function TargetDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('charts');
   const [showAddEntry, setShowAddEntry] = useState(false);
+  const [lineVisibility, setLineVisibility] = useState({
+    progress: true,
+    target: true,
+    trend: true
+  });
   const [newEntry, setNewEntry] = useState({
     value: '',
     note: '',
@@ -199,7 +204,15 @@ export default function TargetDetailPage() {
           <TabsContent value="charts">
             <TargetPaceSection target={target} metrics={metrics} />
             <TargetProgressIndicators target={target} metrics={metrics} />
-            <TargetCharts target={target} entries={entries} projectedDate={metrics.projectedDate} />
+            <TargetCharts 
+              target={target} 
+              entries={entries} 
+              projectedDate={metrics.projectedDate} 
+              lineVisibility={lineVisibility}
+              onToggleLine={(lineType) => 
+                setLineVisibility(prev => ({ ...prev, [lineType]: !prev[lineType] }))
+              }
+            />
           </TabsContent>
 
           <TabsContent value="history">

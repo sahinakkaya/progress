@@ -4,6 +4,48 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } fro
 
 import type { TargetTracker, Entry } from '../../types';
 
+interface LegendItemProps {
+  color: string;
+  label: string;
+  visible: boolean;
+  onClick: () => void;
+  lineStyle: 'solid' | 'dashed';
+}
+
+function LegendItem({ color, label, visible, onClick, lineStyle }: LegendItemProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-2 px-2 py-1 rounded text-sm transition-opacity ${
+        visible ? 'opacity-100' : 'opacity-50'
+      } hover:opacity-75`}
+    >
+      <div className="w-6 h-3 flex items-center justify-center">
+        {lineStyle === 'dashed' ? (
+          <div
+            className="w-full h-0.5"
+            style={{ 
+              background: visible 
+                ? `repeating-linear-gradient(to right, ${color} 0px, ${color} 3px, transparent 3px, transparent 6px)`
+                : `repeating-linear-gradient(to right, transparent 0px, transparent 3px, ${color} 3px, ${color} 4px, transparent 4px, transparent 6px)`,
+            }}
+          />
+        ) : (
+          <div
+            className="w-full h-0.5"
+            style={{ 
+              backgroundColor: visible ? color : 'transparent', 
+              border: visible ? 'none' : `1px solid ${color}`,
+              borderWidth: visible ? '0' : '1px 0'
+            }}
+          />
+        )}
+      </div>
+      <span className="text-gray-300">{label}</span>
+    </button>
+  );
+}
+
 interface TargetChartsProps {
 
   target: TargetTracker;
@@ -11,9 +53,15 @@ interface TargetChartsProps {
   entries: Entry[];
 
   projectedDate: Date;
+  lineVisibility: {
+    progress: boolean;
+    target: boolean;
+    trend: boolean;
+  };
+  onToggleLine: (lineType: 'progress' | 'target' | 'trend') => void;
 }
 
-export default function TargetCharts({ target, entries, projectedDate }: TargetChartsProps) {
+export default function TargetCharts({ target, entries, projectedDate, lineVisibility, onToggleLine }: TargetChartsProps) {
 
   // Prepare data for different charts
 
@@ -81,28 +129,30 @@ export default function TargetCharts({ target, entries, projectedDate }: TargetC
 
     });
 
-    combinedData.push({
+    if (lineVisibility.trend) {
+      combinedData.push({
 
-      dateTime: startDate.getTime(),
+        dateTime: startDate.getTime(),
 
-      dateLabel: startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        dateLabel: startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
 
-      projectedValue: target.startValue,
+        projectedValue: target.startValue,
 
-      value: null
+        value: null
 
-    });
-    combinedData.push({
+      });
+      combinedData.push({
 
-      dateTime: projectedDate.getTime(),
+        dateTime: projectedDate.getTime(),
 
-      dateLabel: projectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        dateLabel: projectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
 
-      projectedValue: target.goalValue,
+        projectedValue: target.goalValue,
 
-      value: null
+        value: null
 
-    });
+      });
+    }
 
 
 
@@ -143,6 +193,31 @@ export default function TargetCharts({ target, entries, projectedDate }: TargetC
 
   combinedData.sort((a, b) => a.dateTime - b.dateTime);
 
+  // Calculate dynamic X-axis ticks based on actual data range
+  const generateXAxisTicks = () => {
+    if (!target.startDate || !target.goalDate) return [];
+    
+    const startTime = new Date(target.startDate).getTime();
+    const goalTime = new Date(target.goalDate).getTime();
+    const projectedTime = projectedDate.getTime();
+    
+    // Base ticks always include start and goal
+    const baseTicks = [startTime, goalTime];
+    
+    // Add projected date only if trend line is shown
+    if (lineVisibility.trend) {
+      baseTicks.push(projectedTime);
+    }
+    
+    // Add quarter points for better granularity
+    const duration = goalTime - startTime;
+    baseTicks.push(startTime + duration * 0.25);
+    baseTicks.push(startTime + duration * 0.5);
+    baseTicks.push(startTime + duration * 0.75);
+    
+    return baseTicks.sort((a, b) => a - b);
+  };
+
   if (progressData.length === 0) {
 
     return (
@@ -172,6 +247,31 @@ export default function TargetCharts({ target, entries, projectedDate }: TargetC
   return (
 
     <div className="bg-gray-800 pt-6 pr-6 rounded-lg">
+      <div className="flex justify-end items-center mb-4 px-6">
+        <div className="flex items-center gap-4">
+          <LegendItem 
+            color="rgb(59, 130, 246)" 
+            label="Progress" 
+            visible={lineVisibility.progress}
+            onClick={() => onToggleLine('progress')}
+            lineStyle="solid"
+          />
+          <LegendItem 
+            color="rgb(34, 197, 94)" 
+            label="Target" 
+            visible={lineVisibility.target}
+            onClick={() => onToggleLine('target')}
+            lineStyle="dashed"
+          />
+          <LegendItem 
+            color="rgb(197, 34, 94)" 
+            label="Trend" 
+            visible={lineVisibility.trend}
+            onClick={() => onToggleLine('trend')}
+            lineStyle="dashed"
+          />
+        </div>
+      </div>
 
       <div className="h-64">
 
@@ -186,14 +286,7 @@ export default function TargetCharts({ target, entries, projectedDate }: TargetC
               type="number"
               scale="time"
               domain={['dataMin', 'dataMax']}
-              ticks={[
-                new Date(projectedDate).getTime(),
-                new Date(target.startDate).getTime(),
-                new Date(target.startDate).getTime() + (new Date(target.goalDate).getTime() - new Date(target.startDate).getTime()) * 0.25,
-                new Date(target.startDate).getTime() + (new Date(target.goalDate).getTime() - new Date(target.startDate).getTime()) * 0.5,
-                new Date(target.startDate).getTime() + (new Date(target.goalDate).getTime() - new Date(target.startDate).getTime()) * 0.75,
-                new Date(target.goalDate).getTime(),
-              ].sort((a, b) => a - b)}
+              ticks={generateXAxisTicks()}
               // ticks={[]}
               tick={{ fontSize: 10, fill: 'rgb(156, 163, 175)' }}
               axisLine={false}
@@ -214,65 +307,69 @@ export default function TargetCharts({ target, entries, projectedDate }: TargetC
             />
 
             {/* Actual progress line */}
+            {lineVisibility.progress && (
+              <Line
 
-            <Line
+                type="monotone"
 
-              type="monotone"
+                dataKey="value"
 
-              dataKey="value"
+                stroke="rgb(59, 130, 246)"
 
-              stroke="rgb(59, 130, 246)"
+                strokeWidth={2}
 
-              strokeWidth={2}
+                dot={{ fill: 'rgb(59, 130, 246)', strokeWidth: 1, r: 1.2 }}
 
-              dot={{ fill: 'rgb(59, 130, 246)', strokeWidth: 1, r: 1.2 }}
+                activeDot={{ r: 4, stroke: 'rgb(59, 130, 246)', strokeWidth: 1 }}
 
-              activeDot={{ r: 4, stroke: 'rgb(59, 130, 246)', strokeWidth: 1 }}
+                connectNulls={false}
 
-              connectNulls={false}
-
-            />
+              />
+            )}
 
             {/* Target line */}
+            {lineVisibility.target && (
+              <Line
 
-            <Line
+                type="monotone"
 
-              type="monotone"
+                dataKey="targetValue"
 
-              dataKey="targetValue"
+                stroke="rgb(34, 197, 94)"
 
-              stroke="rgb(34, 197, 94)"
+                strokeWidth={2}
 
-              strokeWidth={2}
+                strokeDasharray="5 5"
 
-              strokeDasharray="5 5"
+                dot={{ fill: 'rgb(34, 197, 94)', strokeWidth: 0, r: 3 }}
 
-              dot={{ fill: 'rgb(34, 197, 94)', strokeWidth: 0, r: 3 }}
+                activeDot={{ r: 4, stroke: 'rgb(34, 197, 94)', strokeWidth: 1 }}
 
-              activeDot={{ r: 4, stroke: 'rgb(34, 197, 94)', strokeWidth: 1 }}
+                connectNulls={true}
 
-              connectNulls={true}
+              />
+            )}
+            {lineVisibility.trend && (
+              <Line
 
-            />
-            <Line
+                type="monotone"
 
-              type="monotone"
+                dataKey="projectedValue"
 
-              dataKey="projectedValue"
+                stroke="rgb(197, 34, 94)"
 
-              stroke="rgb(197, 34, 94)"
+                strokeWidth={2}
 
-              strokeWidth={2}
+                strokeDasharray="5 5"
 
-              strokeDasharray="5 5"
+                dot={{ fill: 'rgb(197, 34, 94)', strokeWidth: 0, r: 3 }}
 
-              dot={{ fill: 'rgb(197, 34, 94)', strokeWidth: 0, r: 3 }}
+                activeDot={{ r: 4, stroke: 'rgb(197, 34, 94)', strokeWidth: 1 }}
 
-              activeDot={{ r: 4, stroke: 'rgb(197, 34, 94)', strokeWidth: 1 }}
+                connectNulls={true}
 
-              connectNulls={true}
-
-            />
+              />
+            )}
 
           </LineChart>
 
