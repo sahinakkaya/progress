@@ -18,7 +18,7 @@ interface CustomTooltipProps {
   projectedDate: Date;
 }
 
-function CustomTooltip({ active, payload, label, target, lineVisibility, projectedDate }: CustomTooltipProps) {
+function CustomTooltip({ active, payload, label, lineVisibility }: CustomTooltipProps) {
   if (!active || !label || !payload) return null;
 
   const currentTime = Number(label);
