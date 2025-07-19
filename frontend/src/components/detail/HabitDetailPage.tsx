@@ -41,6 +41,15 @@ export default function HabitDetailPage() {
     fetchHabitDetails();
   }, [id]);
 
+  useEffect(() => {
+    if (habit) {
+      document.title = `${habit.trackerName} | Progress`;
+    }
+    return () => {
+      document.title = 'Progress';
+    };
+  }, [habit]);
+
   const fetchHabitDetails = async () => {
     if (!id) return;
     

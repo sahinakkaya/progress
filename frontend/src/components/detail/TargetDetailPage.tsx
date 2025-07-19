@@ -41,6 +41,15 @@ export default function TargetDetailPage() {
     fetchTargetDetails();
   }, [id]);
 
+  useEffect(() => {
+    if (target) {
+      document.title = `${target.trackerName} | Progress`;
+    }
+    return () => {
+      document.title = 'Progress';
+    };
+  }, [target]);
+
   const fetchTargetDetails = async () => {
     if (!id) return;
 

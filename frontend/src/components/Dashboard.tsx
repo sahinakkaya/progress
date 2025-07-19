@@ -1,5 +1,5 @@
 // src/components/Dashboard.tsx - Mobile-style redesigned dashboard
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -229,6 +229,13 @@ export default function Dashboard() {
   
   const { dashboard, loading, error, refetch, selectedDate, setSelectedDate } = useDashboard();
   const { dueCounts } = useDueCounts(selectedDate);
+
+  useEffect(() => {
+    document.title = 'Dashboard | Progress';
+    return () => {
+      document.title = 'Progress';
+    };
+  }, []);
 
   const handleEntryAdded = () => {
     refetch();
