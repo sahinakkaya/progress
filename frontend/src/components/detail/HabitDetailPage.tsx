@@ -194,12 +194,16 @@ export default function HabitDetailPage() {
     
     const entriesForDate = entries.filter(entry => {
       const entryDate = new Date(entry.date).toISOString().split('T')[0];
-      return entryDate === selectedDate && entry.done;
+      return entryDate === selectedDate;
     });
     
     if (entriesForDate.length === 0) return;
     
-    const lastEntry = entriesForDate[entriesForDate.length - 1];
+    // Sort by createdAt to get the most recent entry
+    const sortedEntries = entriesForDate.sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    const lastEntry = sortedEntries[0];
     
     setAddingEntry(true);
     try {

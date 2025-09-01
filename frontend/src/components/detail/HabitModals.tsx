@@ -37,7 +37,7 @@ export default function HabitModals({
     if (!selectedDate) return [];
     return entries.filter(entry => {
       const entryDate = new Date(entry.date).toISOString().split('T')[0];
-      return entryDate === selectedDate && entry.done;
+      return entryDate === selectedDate;
     });
   };
   
