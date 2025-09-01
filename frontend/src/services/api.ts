@@ -146,6 +146,12 @@ export const entriesApi = {
     apiRequest<void>(`/entries/${id}`, {
       method: 'DELETE',
     }),
+  
+  bulkDelete: (ids: number[]): Promise<void> =>
+    apiRequest<void>('/entries', {
+      method: 'DELETE',
+      body: JSON.stringify(ids),
+    }),
 };
 
 // Hook for API calls with loading and error states

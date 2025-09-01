@@ -143,3 +143,27 @@ func DeleteEntry(entryID int) error {
 	
 	return nil
 }
+
+func BulkDeleteEntries(entryIDs []int) error {
+	if len(entryIDs) == 0 {
+		return nil
+	}
+	
+	// Build placeholders for the IN clause
+	placeholders := make([]string, len(entryIDs))
+	args := make([]interface{}, len(entryIDs))
+	for i, id := range entryIDs {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+	
+	query := `DELETE FROM entries WHERE id IN (` + 
+		placeholders[0]
+	for i := 1; i < len(placeholders); i++ {
+		query += "," + placeholders[i]
+	}
+	query += ")"
+	
+	_, err := DB.Exec(query, args...)
+	return err
+}

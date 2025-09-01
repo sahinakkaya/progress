@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle, XCircle, Plus, Edit, Trash2, Calendar } from 'lucide-react';
+import { CheckCircle, XCircle, Plus, Edit, Trash2, Calendar, Square, CheckSquare } from 'lucide-react';
 import { habitApi, entriesApi } from '../../services/api';
 import type { HabitTracker, Entry, AddEntryRequest } from '../../types';
 
@@ -18,6 +18,9 @@ interface HabitHistoryProps {
 export default function HabitHistory({ habit, entries, onUpdate }: HabitHistoryProps) {
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
+  const [deletingEntryId, setDeletingEntryId] = useState<number | null>(null);
+  const [selectedEntries, setSelectedEntries] = useState<Set<number>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [newEntry, setNewEntry] = useState({
     done: true,
     note: '',
@@ -50,14 +53,50 @@ export default function HabitHistory({ habit, entries, onUpdate }: HabitHistoryP
   };
 
   const handleDeleteEntry = async (entry: Entry) => {
-    if (!window.confirm('Are you sure you want to delete this entry?')) return;
-
+    setDeletingEntryId(entry.id);
+    
     try {
       await entriesApi.delete(entry.id);
       onUpdate();
     } catch (error) {
       console.error('Failed to delete entry:', error);
       alert('Failed to delete entry. Please try again.');
+    } finally {
+      setDeletingEntryId(null);
+    }
+  };
+
+  const toggleSelection = (entryId: number) => {
+    const newSelected = new Set(selectedEntries);
+    if (newSelected.has(entryId)) {
+      newSelected.delete(entryId);
+    } else {
+      newSelected.add(entryId);
+    }
+    setSelectedEntries(newSelected);
+  };
+
+  const selectAll = () => {
+    setSelectedEntries(new Set(entries.map(e => e.id)));
+  };
+
+  const clearSelection = () => {
+    setSelectedEntries(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedEntries.size === 0) return;
+    
+    setBulkDeleting(true);
+    try {
+      await entriesApi.bulkDelete(Array.from(selectedEntries));
+      clearSelection();
+      onUpdate();
+    } catch (error) {
+      console.error('Failed to delete entries:', error);
+      alert('Failed to delete entries. Please try again.');
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
@@ -109,14 +148,54 @@ export default function HabitHistory({ habit, entries, onUpdate }: HabitHistoryP
               <Calendar className="w-5 h-5" />
               Log History
             </CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAddEntry(!showAddEntry)}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Entry
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddEntry(!showAddEntry)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Entry
+              </Button>
+              
+              {selectedEntries.size > 0 && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={selectAll}
+                    disabled={selectedEntries.size === entries.length}
+                  >
+                    Select All
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleBulkDelete}
+                    disabled={bulkDeleting}
+                  >
+                    {bulkDeleting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete ({selectedEntries.size})
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearSelection}
+                  >
+                    Cancel
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </CardHeader>
         
@@ -178,10 +257,24 @@ export default function HabitHistory({ habit, entries, onUpdate }: HabitHistoryP
       <div className="space-y-4">
         {sortedEntries.length > 0 ? (
           sortedEntries.map((entry) => (
-            <Card key={entry.id} className="transition-shadow hover:shadow-md">
+            <Card key={entry.id} className={`transition-shadow hover:shadow-md ${
+              selectedEntries.has(entry.id) ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+            }`}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3 flex-1">
+                    {/* Selection Checkbox */}
+                    <button
+                      onClick={() => toggleSelection(entry.id)}
+                      className="flex-shrink-0 mt-1 p-1 hover:bg-gray-100 rounded"
+                    >
+                      {selectedEntries.has(entry.id) ? (
+                        <CheckSquare className="w-5 h-5 text-blue-600" />
+                      ) : (
+                        <Square className="w-5 h-5 text-gray-400" />
+                      )}
+                    </button>
+                    
                     {/* Status Icon */}
                     <div className="flex-shrink-0 mt-1">
                       {entry.done ? (
@@ -231,24 +324,31 @@ export default function HabitHistory({ habit, entries, onUpdate }: HabitHistoryP
                   </div>
                   
                   {/* Actions */}
-                  <div className="flex gap-1 ml-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setEditingEntry(entry)}
-                      className="p-2"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteEntry(entry)}
-                      className="p-2 text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  {selectedEntries.size === 0 && (
+                    <div className="flex gap-1 ml-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditingEntry(entry)}
+                        className="p-2"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteEntry(entry)}
+                        disabled={deletingEntryId === entry.id}
+                        className="p-2 text-red-600 hover:text-red-700 disabled:opacity-50"
+                      >
+                        {deletingEntryId === entry.id ? (
+                          <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

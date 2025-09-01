@@ -81,3 +81,34 @@ func DeleteEntry(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+// BulkDeleteEntries deletes multiple entries
+// @Summary Bulk delete entries
+// @Description Delete multiple entries by their IDs
+// @Tags General
+// @Accept json
+// @Param ids body []int true "Array of entry IDs to delete"
+// @Success 204 "No Content"
+// @Failure 400 {string} string "Bad Request"
+// @Router /entries [delete]
+func BulkDeleteEntries(w http.ResponseWriter, r *http.Request) {
+	var entryIDs []int
+	
+	if err := json.NewDecoder(r.Body).Decode(&entryIDs); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	
+	if len(entryIDs) == 0 {
+		http.Error(w, "No entry IDs provided", http.StatusBadRequest)
+		return
+	}
+	
+	err := database.BulkDeleteEntries(entryIDs)
+	if err != nil {
+		http.Error(w, "Failed to delete entries", http.StatusInternalServerError)
+		return
+	}
+	
+	w.WriteHeader(http.StatusNoContent)
+}

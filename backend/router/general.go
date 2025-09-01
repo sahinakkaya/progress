@@ -14,6 +14,7 @@ func SetupGeneralRoutes(api *mux.Router) {
     RegisterAndHandle(api, "GET", "/trackers", "Get all trackers combined", handlers.GetAllTrackers)
     RegisterAndHandle(api, "GET", "/entries", "Get all entries", handlers.GetAllEntries)
     RegisterAndHandle(api, "DELETE", "/entries/{id}", "Delete entry by ID", handlers.DeleteEntry)
+    RegisterAndHandle(api, "DELETE", "/entries", "Bulk delete entries", handlers.BulkDeleteEntries)
 
     // Health check or status routes (optional)
     // api.HandleFunc("/health", handlers.HealthCheck).Methods("GET")
