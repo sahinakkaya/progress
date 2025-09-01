@@ -1,5 +1,5 @@
 // src/components/Dashboard.tsx - Mobile-style redesigned dashboard
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,28 +10,15 @@ import { useDashboard, useDueCounts } from '../hooks/useDashboard';
 import WeeklyCalendar from './WeeklyCalendar';
 import CreateHabitForm from './forms/CreateHabitForm';
 import CreateTargetForm from './forms/CreateTargetForm';
+import { calculateTargetMetrics } from './detail/targetUtils';
 
 interface HabitCardProps {
   habit: HabitTracker;
+  entries: Entry[];
 }
 
-function HabitCard({ habit }: HabitCardProps) {
+function HabitCard({ habit, entries }: HabitCardProps) {
   const navigate = useNavigate();
-  const [entries, setEntries] = useState<Entry[]>([]);
-
-  // Fetch entries for this habit
-  React.useEffect(() => {
-    const fetchEntries = async () => {
-      try {
-        const habitEntries = await habitApi.getEntries(habit.id);
-        setEntries(habitEntries);
-      } catch (error) {
-        console.error('Failed to fetch habit entries:', error);
-        setEntries([]);
-      }
-    };
-    fetchEntries();
-  }, [habit.id]);
 
 
   // Calculate period-based status
@@ -144,10 +131,14 @@ function HabitCard({ habit }: HabitCardProps) {
 
   const status = getHabitStatus();
 
+
   return (
     <Card 
       className="bg-white border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-      onClick={() => navigate(`/habit/${habit.id}`)}
+      onClick={() => {
+        console.log('Navigating to habit:', habit.id);
+        navigate(`/habit/${habit.id}`);
+      }}
     >
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
@@ -177,28 +168,27 @@ function HabitCard({ habit }: HabitCardProps) {
 
 interface TargetCardProps {
   target: TargetTracker;
+  entries: Entry[];
 }
 
-function TargetCard({ target }: TargetCardProps) {
+function TargetCard({ target, entries }: TargetCardProps) {
   const navigate = useNavigate();
 
-
-  const currentValue = target.currentValue ?? target.startValue;
+  const metrics = calculateTargetMetrics(target, entries);
   const goalDate = new Date(target.goalDate).toLocaleDateString('en-US', { 
     month: 'short', 
     day: 'numeric', 
     year: 'numeric' 
   });
 
-  // Calculate pace - rough estimate based on days
-  const totalDays = Math.ceil((new Date(target.goalDate).getTime() - new Date(target.startDate).getTime()) / (1000 * 60 * 60 * 24));
-  const daysPassed = Math.ceil((Date.now() - new Date(target.startDate).getTime()) / (1000 * 60 * 60 * 24));
-  const expectedProgress = (daysPassed / totalDays) * (target.goalValue - target.startValue) + target.startValue;
 
   return (
     <Card 
       className="bg-white border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-      onClick={() => navigate(`/target/${target.id}`)}
+      onClick={() => {
+        console.log('Navigating to target:', target.id);
+        navigate(`/target/${target.id}`);
+      }}
     >
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
@@ -214,8 +204,8 @@ function TargetCard({ target }: TargetCardProps) {
             </div>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-semibold text-teal-600">{currentValue}</div>
-            <div className="text-sm text-teal-500">Pace: {Math.round(expectedProgress * 10) / 10}</div>
+            <div className="text-2xl font-semibold text-teal-600">{metrics.currentValue}</div>
+            <div className="text-sm text-teal-500">Pace: {Math.round(metrics.pace * 10) / 10}</div>
           </div>
         </div>
       </CardContent>
@@ -226,6 +216,8 @@ function TargetCard({ target }: TargetCardProps) {
 export default function Dashboard() {
   const [showCreateHabit, setShowCreateHabit] = useState(false);
   const [showCreateTarget, setShowCreateTarget] = useState(false);
+  const [habitEntries, setHabitEntries] = useState<Map<number, Entry[]>>(new Map());
+  const [targetEntries, setTargetEntries] = useState<Map<number, Entry[]>>(new Map());
   
   const { dashboard, loading, error, refetch, selectedDate, setSelectedDate } = useDashboard();
   const { dueCounts } = useDueCounts(selectedDate);
@@ -236,6 +228,51 @@ export default function Dashboard() {
       document.title = 'Progress';
     };
   }, []);
+
+  // Fetch entries for all trackers
+  useEffect(() => {
+    const fetchAllEntries = async () => {
+      if (!dashboard) return;
+      
+      // Fetch habit entries
+      const habitEntriesPromises = dashboard.habitTrackers?.map(async (habit) => {
+        try {
+          const entries = await habitApi.getEntries(habit.id);
+          return { id: habit.id, entries };
+        } catch (error) {
+          console.error(`Failed to fetch entries for habit ${habit.id}:`, error);
+          return { id: habit.id, entries: [] };
+        }
+      }) || [];
+      
+      // Fetch target entries  
+      const targetEntriesPromises = dashboard.targetTrackers?.map(async (target) => {
+        try {
+          const entries = await habitApi.getEntries(target.id);
+          return { id: target.id, entries };
+        } catch (error) {
+          console.error(`Failed to fetch entries for target ${target.id}:`, error);
+          return { id: target.id, entries: [] };
+        }
+      }) || [];
+      
+      const [habitResults, targetResults] = await Promise.all([
+        Promise.all(habitEntriesPromises),
+        Promise.all(targetEntriesPromises)
+      ]);
+      
+      // Update state
+      const newHabitEntries = new Map();
+      habitResults.forEach(({ id, entries }) => newHabitEntries.set(id, entries));
+      setHabitEntries(newHabitEntries);
+      
+      const newTargetEntries = new Map();
+      targetResults.forEach(({ id, entries }) => newTargetEntries.set(id, entries));
+      setTargetEntries(newTargetEntries);
+    };
+    
+    fetchAllEntries();
+  }, [dashboard]);
 
   const handleEntryAdded = () => {
     refetch();
@@ -264,6 +301,62 @@ export default function Dashboard() {
 
   const totalTrackers = (dashboard?.habitTrackers?.length || 0) + (dashboard?.targetTrackers?.length || 0);
 
+  // Helper function to check if habit needs action
+  const habitNeedsAction = (habit: HabitTracker): boolean => {
+    const entries = habitEntries.get(habit.id) || [];
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const completedEntries = entries.filter(entry => entry.done === true);
+    
+    if (habit.timePeriod === 'perDay') {
+      const todayEntries = completedEntries.filter(entry => {
+        const entryDate = new Date(entry.date);
+        const entryDay = new Date(entryDate.getFullYear(), entryDate.getMonth(), entryDate.getDate());
+        return entryDay.getTime() === today.getTime();
+      });
+      return habit.badHabit ? todayEntries.length > habit.goal : todayEntries.length < habit.goal;
+    } else if (habit.timePeriod === 'perWeek') {
+      const startOfWeek = new Date(today);
+      const day = startOfWeek.getDay();
+      const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
+      startOfWeek.setDate(diff);
+      startOfWeek.setHours(0, 0, 0, 0);
+      
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(endOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+      
+      const thisWeekEntries = completedEntries.filter(entry => {
+        const entryDate = new Date(entry.date);
+        return entryDate >= startOfWeek && entryDate <= endOfWeek;
+      });
+      return habit.badHabit ? thisWeekEntries.length > habit.goal : thisWeekEntries.length < habit.goal;
+    } else if (habit.timePeriod === 'perMonth') {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      
+      const thisMonthEntries = completedEntries.filter(entry => {
+        const entryDate = new Date(entry.date);
+        return entryDate >= startOfMonth && entryDate <= endOfMonth;
+      });
+      return habit.badHabit ? thisMonthEntries.length > habit.goal : thisMonthEntries.length < habit.goal;
+    }
+    return true;
+  };
+
+  // Helper function to check if target needs action
+  const targetNeedsAction = (target: TargetTracker): boolean => {
+    const entries = targetEntries.get(target.id) || [];
+    const today = new Date().toISOString().split('T')[0];
+    return !entries.some(entry => entry.date.split('T')[0] === today);
+  };
+
+  // Group trackers by action status
+  const habitsNeedingAction = dashboard?.habitTrackers?.filter(habitNeedsAction) || [];
+  const habitsCompleted = dashboard?.habitTrackers?.filter(habit => !habitNeedsAction(habit)) || [];
+  const targetsNeedingAction = dashboard?.targetTrackers?.filter(targetNeedsAction) || [];
+  const targetsCompleted = dashboard?.targetTrackers?.filter(target => !targetNeedsAction(target)) || [];
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-600 to-blue-700">
       {/* Header */}
@@ -288,22 +381,48 @@ export default function Dashboard() {
       </div>
 
       {/* Content */}
-      <div className="bg-gray-50 min-h-screen p-4 space-y-3">
-        {/* Habit Trackers */}
-        {dashboard?.habitTrackers?.map(habit => (
-          <HabitCard
-            key={habit.id}
-            habit={habit}
-          />
-        ))}
+      <div className="bg-gray-50 min-h-screen p-4 space-y-6">
+        {/* Trackers Needing Action */}
+        {(habitsNeedingAction.length > 0 || targetsNeedingAction.length > 0) && (
+          <div className="space-y-3">
+            <h2 className="text-sm font-medium text-gray-700 px-2">Needs Action</h2>
+            {habitsNeedingAction.map(habit => (
+              <HabitCard
+                key={habit.id}
+                habit={habit}
+                entries={habitEntries.get(habit.id) || []}
+              />
+            ))}
+            {targetsNeedingAction.map(target => (
+              <TargetCard
+                key={target.id}
+                target={target}
+                entries={targetEntries.get(target.id) || []}
+              />
+            ))}
+          </div>
+        )}
 
-        {/* Target Trackers */}
-        {dashboard?.targetTrackers?.map(target => (
-          <TargetCard
-            key={target.id}
-            target={target}
-          />
-        ))}
+        {/* Completed Trackers */}
+        {(habitsCompleted.length > 0 || targetsCompleted.length > 0) && (
+          <div className="space-y-3">
+            <h2 className="text-sm font-medium text-gray-700 px-2">Completed</h2>
+            {habitsCompleted.map(habit => (
+              <HabitCard
+                key={habit.id}
+                habit={habit}
+                entries={habitEntries.get(habit.id) || []}
+              />
+            ))}
+            {targetsCompleted.map(target => (
+              <TargetCard
+                key={target.id}
+                target={target}
+                entries={targetEntries.get(target.id) || []}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Empty state */}
         {totalTrackers === 0 && (

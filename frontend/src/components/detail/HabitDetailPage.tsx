@@ -38,6 +38,13 @@ export default function HabitDetailPage() {
 
   useEffect(() => {
     if (!id) return;
+    
+    // Reset state when navigating to different habit
+    setHabit(null);
+    setEntries([]);
+    setError(null);
+    setActiveTab('charts');
+    
     fetchHabitDetails();
   }, [id]);
 

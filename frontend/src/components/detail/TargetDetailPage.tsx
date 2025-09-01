@@ -38,6 +38,13 @@ export default function TargetDetailPage() {
 
   useEffect(() => {
     if (!id) return;
+    
+    // Reset state when navigating to different target
+    setTarget(null);
+    setEntries([]);
+    setError(null);
+    setActiveTab('charts');
+    
     fetchTargetDetails();
   }, [id]);
 
