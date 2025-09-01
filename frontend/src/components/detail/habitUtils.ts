@@ -164,8 +164,8 @@ export const calculateStreaks = (periods: PeriodData[]): StreakData => {
   };
 };
 
-export const calculateGoalProgress = (periods: PeriodData[], unit: string): GoalProgress => {
-  const countingPeriods = periods.filter(p => !p.isCurrent || (p.isCurrent && p.goalMet));
+export const calculateGoalProgress = (periods: PeriodData[], unit: string, isBadHabit: boolean = false): GoalProgress => {
+  const countingPeriods = periods.filter(p => !p.isCurrent || (p.isCurrent && (p.goalMet || (isBadHabit && !p.goalMet))));
   const completedPeriods = countingPeriods.filter(p => p.goalMet).length;
   const totalPeriods = countingPeriods.length;
   

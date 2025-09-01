@@ -267,7 +267,8 @@ export default function HabitDetailPage() {
   const goalProgress = calculateGoalProgress(
     periods, 
     habit.timePeriod === 'perDay' ? 'days' : 
-    habit.timePeriod === 'perWeek' ? 'weeks' : 'months'
+    habit.timePeriod === 'perWeek' ? 'weeks' : 'months',
+    habit.badHabit || false
   );
   const barChartData = generateBarChartData(
     habit.timePeriod,
