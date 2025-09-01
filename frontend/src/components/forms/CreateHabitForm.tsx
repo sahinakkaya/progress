@@ -61,8 +61,8 @@ export default function CreateHabitForm({ open, onOpenChange, onSuccess }: Creat
     }
 
     const goalNum = parseFloat(formData.goal);
-    if (!formData.goal || isNaN(goalNum) || goalNum <= 0) {
-      newErrors.goal = 'Goal must be greater than 0';
+    if (!formData.goal || isNaN(goalNum) || (goalNum <= 0 && !formData.badHabit) || (formData.badHabit && goalNum < 0)) {
+      newErrors.goal = formData.badHabit ? 'Limit cannot be negative' : 'Goal must be greater than 0';
     }
 
     if (formData.dueType === 'specificDays' && formData.specificDays.length === 0) {
@@ -178,7 +178,7 @@ export default function CreateHabitForm({ open, onOpenChange, onSuccess }: Creat
                 <Input
                   id="goal"
                   type="number"
-                  min="1"
+                  min={formData.badHabit ? "0" : "1"}
                   value={formData.goal}
                   onChange={(e) => setFormData(prev => ({ ...prev, goal: e.target.value }))}
                   className={`w-20 ${errors.goal ? 'border-red-500' : ''}`}
