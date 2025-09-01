@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle } from 'lucide-react';
-import type { HabitTracker } from '../../types';
+import type { HabitTracker, Entry } from '../../types';
 
 interface HabitModalsProps {
   habit: HabitTracker;
@@ -11,7 +11,9 @@ interface HabitModalsProps {
   selectedDate: string | null;
   mousePosition: { x: number; y: number };
   addingEntry: boolean;
+  entries: Entry[];
   onDateEntry: (completed: boolean) => Promise<void>;
+  onDeleteLastEntry: () => Promise<void>;
   onChangeStartDate: () => Promise<void>;
   onCloseDateEntryModal: () => void;
   onCloseStartDateModal: () => void;
@@ -24,11 +26,22 @@ export default function HabitModals({
   selectedDate,
   mousePosition,
   addingEntry,
+  entries,
   onDateEntry,
+  onDeleteLastEntry,
   onChangeStartDate,
   onCloseDateEntryModal,
   onCloseStartDateModal
 }: HabitModalsProps) {
+  const getEntriesForSelectedDate = () => {
+    if (!selectedDate) return [];
+    return entries.filter(entry => {
+      const entryDate = new Date(entry.date).toISOString().split('T')[0];
+      return entryDate === selectedDate && entry.done;
+    });
+  };
+  
+  const hasEntriesForDate = getEntriesForSelectedDate().length > 0;
   return (
     <>
       {/* Date Entry Popup */}
@@ -65,6 +78,17 @@ export default function HabitModals({
               >
                 {habit.badHabit ? 'No' : 'Missed'}
               </Button>
+              {hasEntriesForDate && (
+                <Button
+                  onClick={onDeleteLastEntry}
+                  disabled={addingEntry}
+                  size="sm"
+                  variant="outline"
+                  className="border-gray-300 text-gray-600 hover:bg-gray-50 text-xs"
+                >
+                  Delete last log
+                </Button>
+              )}
             </div>
           </div>
         </>

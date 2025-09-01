@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Settings, BarChart3, Calendar, FileText } from 'lucide-react';
-import { habitApi } from '../../services/api';
+import { habitApi, entriesApi } from '../../services/api';
 import type { HabitTracker, Entry, AddEntryRequest } from '../../types';
 import HabitHistory from './HabitHistory';
 import HabitNotes from './HabitNotes';
@@ -189,6 +189,36 @@ export default function HabitDetailPage() {
     }
   };
 
+  const handleDeleteLastEntry = async () => {
+    if (!habit || !selectedDate) return;
+    
+    const entriesForDate = entries.filter(entry => {
+      const entryDate = new Date(entry.date).toISOString().split('T')[0];
+      return entryDate === selectedDate && entry.done;
+    });
+    
+    if (entriesForDate.length === 0) return;
+    
+    const lastEntry = entriesForDate[entriesForDate.length - 1];
+    
+    setAddingEntry(true);
+    try {
+      await entriesApi.delete(lastEntry.id);
+      
+      // Optimistic update - remove entry immediately
+      setEntries(prevEntries => prevEntries.filter(e => e.id !== lastEntry.id));
+      setShowDateEntryModal(false);
+      setSelectedDate(null);
+    } catch (error) {
+      console.error('Failed to delete entry:', error);
+      alert('Failed to delete entry. Please try again.');
+      // On error, refetch to ensure consistency
+      refetchEntries();
+    } finally {
+      setAddingEntry(false);
+    }
+  };
+
   const handleChangeStartDate = async () => {
     if (!habit || !selectedDate) return;
     
@@ -356,7 +386,9 @@ export default function HabitDetailPage() {
         selectedDate={selectedDate}
         mousePosition={mousePosition}
         addingEntry={addingEntry}
+        entries={entries}
         onDateEntry={handleDateEntry}
+        onDeleteLastEntry={handleDeleteLastEntry}
         onChangeStartDate={handleChangeStartDate}
         onCloseDateEntryModal={() => {
           setShowDateEntryModal(false);
