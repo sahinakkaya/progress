@@ -1,5 +1,5 @@
 // src/components/Dashboard.tsx - Mobile-style redesigned dashboard
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
