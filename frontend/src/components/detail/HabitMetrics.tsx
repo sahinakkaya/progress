@@ -73,7 +73,7 @@ export default function HabitMetrics({ habit, streaks, goalProgress, barChartDat
                 <circle
                   cx="50" cy="50" r="40"
                   stroke="rgb(59, 130, 246)"
-                  strokeWidth="8"
+                  strokeWidth="4"
                   fill="transparent"
                   strokeDasharray={`${(goalProgress.percentage / 100) * 251.2} 251.2`}
                   strokeLinecap="round"
@@ -82,7 +82,7 @@ export default function HabitMetrics({ habit, streaks, goalProgress, barChartDat
               )}
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <div className={`text-lg font-bold ${habit.badHabit ? 'text-white' : 'text-red-500'}`}>
+              <div className={`text-lg font-bold ${habit.badHabit ? 'text-white' : 'text-green-500'}`}>
                 %{goalProgress.percentage}
               </div>
             </div>
@@ -135,14 +135,14 @@ export default function HabitMetrics({ habit, streaks, goalProgress, barChartDat
           {/* Goal Target Line */}
           {barChartData.length > 0 && (
             <div 
-              className="absolute left-0 right-0 border-t-2 border-red-500 border-dashed"
+              className="absolute left-0 right-0 border-t-2 border-blue-500 border-dashed"
               style={{ 
                 bottom: `${20 + (habit.goal / barChartData[0].maxHeight) * 100}px`,
                 left: '10%',
                 right: '10%'
               }}
             >
-              <div className="absolute -right-8 -top-3 text-xs text-red-500 font-medium">
+              <div className="absolute -right-8 -top-3 text-xs text-blue-500 font-medium">
                 {habit.badHabit ? `≤${habit.goal}` : habit.goal}
               </div>
             </div>
