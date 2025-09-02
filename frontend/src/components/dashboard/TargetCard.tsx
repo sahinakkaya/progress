@@ -207,9 +207,9 @@ export default function TargetCard({ target, entries, selectedDate, onQuickLog }
                     <p className="text-sm text-gray-500 mb-2">Goal: {target.goalValue} by {goalDateFormatted}</p>
                     
                     {/* Progress bar */}
-                    <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
+                    <div className="relative w-full bg-gray-200 rounded-full h-4 mb-1">
                       <div 
-                        className={`h-2 rounded-full transition-all duration-300 ${
+                        className={`h-4 rounded-full transition-all duration-300 ${
                           progressPercentage >= 100 ? 'bg-green-500' :
                           progressPercentage >= 75 ? 'bg-green-400' :
                           progressPercentage >= 50 ? 'bg-yellow-400' :
@@ -217,19 +217,51 @@ export default function TargetCard({ target, entries, selectedDate, onQuickLog }
                         }`}
                         style={{ width: `${Math.min(progressPercentage, 100)}%` }}
                       />
+                      {/* Pace indicator line */}
+                      <div 
+                        className="absolute top-0 w-0.5 h-4 bg-gray-500 opacity-80"
+                        style={{ left: `${Math.min(metrics.pacePercentage, 100)}%` }}
+                      />
+                      {/* Current value inside progress bar */}
+                      {progressPercentage > 10 && (
+                        <div 
+                          className="absolute top-1/2 left-0 text-xs text-white font-medium"
+                          style={{ 
+                            width: `${Math.min(progressPercentage, 100)}%`,
+                            transform: 'translateY(-50%)'
+                          }}
+                        >
+                          <div className="text-right pr-2">
+                            {metrics.currentValue}
+                          </div>
+                        </div>
+                      )}
+                      {/* Pace text when behind */}
+                      {!metrics.aheadPace && (
+                        <div 
+                          className="absolute top-1/2 text-xs text-gray-600 whitespace-nowrap"
+                          style={{ 
+                            left: `${Math.min(metrics.pacePercentage, 100)}%`,
+                            transform: 'translateX(4px) translateY(-50%)'
+                          }}
+                        >
+                          Pace: {metrics.pace.toFixed(1)}
+                        </div>
+                      )}
                     </div>
                     
                     {/* Progress info */}
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>{Math.round(progressPercentage)}% ({metrics.currentValue}/{target.goalValue})</span>
-                      <span className={progressStatus.color}>{progressStatus.text}</span>
-                    </div>
+                    {metrics.aheadPace && (
+                      <div className="flex justify-end text-xs text-gray-500">
+                        <span className="text-green-600">Pace: {metrics.pace.toFixed(1)}</span>
+                      </div>
+                    )}
                     
                     {/* Days remaining and daily required */}
                     {daysRemaining > 0 && dailyRequired > 0 && (
                       <div className="flex items-center space-x-3 mt-1 text-xs text-gray-500">
                         <span>📅 {daysRemaining} days left</span>
-                        <span>• Need {Math.round(dailyRequired * 10) / 10}/day</span>
+                        <span>• Need {dailyRequired.toFixed(2)}/day</span>
                       </div>
                     )}
                   </div>
