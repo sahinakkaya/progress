@@ -20,15 +20,16 @@ interface DayInfo {
 export default function WeeklyCalendar({ selectedDate, onDateChange, dueCounts = {} }: WeeklyCalendarProps) {
   const [weekStart, setWeekStart] = useState<Date>(new Date());
 
-  // Calculate week start (Sunday) for given date
+  // Calculate week start (Monday) for given date
   const getWeekStart = (date: Date): Date => {
     const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     const day = d.getDay(); // Sunday = 0, Monday = 1, etc.
-    d.setDate(d.getDate() - day); // Go back to Sunday
+    const daysToSubtract = day === 0 ? 6 : day - 1; // If Sunday, go back 6 days, otherwise go back (day - 1) days
+    d.setDate(d.getDate() - daysToSubtract); // Go back to Monday
     return d;
   };
 
-  // Generate week days array starting from Sunday
+  // Generate week days array starting from Monday
   const getWeekDays = (weekStart: Date): DayInfo[] => {
     const days: DayInfo[] = [];
     const today = new Date();
@@ -42,12 +43,12 @@ export default function WeeklyCalendar({ selectedDate, onDateChange, dueCounts =
       const isToday = date.getTime() === todayLocal.getTime();
       const isSelected = date.getTime() === selectedLocal.getTime();
 
-      const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+      const dayNames = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
       days.push({
         date,
         dateString,
-        dayAbbrev: dayNames[date.getDay()],
+        dayAbbrev: dayNames[(date.getDay() + 6) % 7], // Adjust index for Monday start
         dayNumber: date.getDate(),
         isToday,
         isSelected,

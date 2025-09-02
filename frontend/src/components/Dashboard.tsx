@@ -15,16 +15,16 @@ import { calculateTargetMetrics } from './detail/targetUtils';
 interface HabitCardProps {
   habit: HabitTracker;
   entries: Entry[];
+  selectedDate: Date;
 }
 
-function HabitCard({ habit, entries }: HabitCardProps) {
+function HabitCard({ habit, entries, selectedDate }: HabitCardProps) {
   const navigate = useNavigate();
 
 
   // Calculate period-based status
   const getHabitStatus = () => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const today = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
     
     // Get completed entries only
     const completedEntries = entries.filter(entry => entry.done === true);
@@ -93,13 +93,13 @@ function HabitCard({ habit, entries }: HabitCardProps) {
       };
       
     } else if (habit.timePeriod === 'perMonth') {
-      // Current month
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      // Selected date's month
+      const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+      const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59, 999);
       
       // Previous month
-      const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+      const startOfLastMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1);
+      const endOfLastMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 0, 23, 59, 59, 999);
       
       const thisMonthEntries = completedEntries.filter(entry => {
         const entryDate = new Date(entry.date);
@@ -166,9 +166,10 @@ function HabitCard({ habit, entries }: HabitCardProps) {
 interface TargetCardProps {
   target: TargetTracker;
   entries: Entry[];
+  selectedDate: Date;
 }
 
-function TargetCard({ target, entries }: TargetCardProps) {
+function TargetCard({ target, entries, selectedDate }: TargetCardProps) {
   const navigate = useNavigate();
 
   const metrics = calculateTargetMetrics(target, entries);
@@ -198,8 +199,8 @@ function TargetCard({ target, entries }: TargetCardProps) {
             </div>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-semibold text-teal-600">{metrics.currentValue}</div>
-            <div className="text-sm text-teal-500">Pace: {Math.round(metrics.pace * 10) / 10}</div>
+            <div className="text-2xl font-semibold text-blue-500">{metrics.currentValue}</div>
+            <div className={metrics.currentValue > metrics.pace ? "text-md text-green-500" : "text-md text-red-500"}>Pace: {Math.round(metrics.pace * 10) / 10}</div>
           </div>
         </div>
       </CardContent>
@@ -341,8 +342,7 @@ export default function Dashboard() {
   // Helper function to check if habit needs action
   const habitNeedsAction = (habit: HabitTracker): boolean => {
     const entries = habitEntries.get(habit.id) || [];
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const today = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
     const completedEntries = entries.filter(entry => entry.done === true);
     
     if (habit.timePeriod === 'perDay') {
@@ -369,8 +369,8 @@ export default function Dashboard() {
       });
       return habit.badHabit ? thisWeekEntries.length > habit.goal : thisWeekEntries.length < habit.goal;
     } else if (habit.timePeriod === 'perMonth') {
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+      const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59, 999);
       
       const thisMonthEntries = completedEntries.filter(entry => {
         const entryDate = new Date(entry.date);
@@ -384,8 +384,8 @@ export default function Dashboard() {
   // Helper function to check if target needs action
   const targetNeedsAction = (target: TargetTracker): boolean => {
     const entries = targetEntries.get(target.id) || [];
-    const today = new Date().toISOString().split('T')[0];
-    return !entries.some(entry => entry.date.split('T')[0] === today);
+    const selectedDateString = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
+    return !entries.some(entry => entry.date.split('T')[0] === selectedDateString);
   };
 
   // Group trackers by action status
@@ -428,6 +428,7 @@ export default function Dashboard() {
                 key={habit.id}
                 habit={habit}
                 entries={habitEntries.get(habit.id) || []}
+                selectedDate={selectedDate}
               />
             ))}
             {targetsNeedingAction.map(target => (
@@ -435,6 +436,7 @@ export default function Dashboard() {
                 key={target.id}
                 target={target}
                 entries={targetEntries.get(target.id) || []}
+                selectedDate={selectedDate}
               />
             ))}
           </div>
@@ -449,6 +451,7 @@ export default function Dashboard() {
                 key={habit.id}
                 habit={habit}
                 entries={habitEntries.get(habit.id) || []}
+                selectedDate={selectedDate}
               />
             ))}
             {targetsCompleted.map(target => (
@@ -456,6 +459,7 @@ export default function Dashboard() {
                 key={target.id}
                 target={target}
                 entries={targetEntries.get(target.id) || []}
+                selectedDate={selectedDate}
               />
             ))}
           </div>
