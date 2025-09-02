@@ -273,7 +273,14 @@ export default function HabitCard({ habit, entries, selectedDate, onQuickLog }: 
                   </span>
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900">{habit.trackerName}</h3>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-medium text-gray-900">{habit.trackerName}</h3>
+                    {habit.badHabit && (
+                      <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium">
+                        Bad Habit
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center space-x-2">
                     <p className="text-sm text-gray-500">{status.statusText}</p>
                     {currentStreak > 0 && (
