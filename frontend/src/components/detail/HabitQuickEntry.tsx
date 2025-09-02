@@ -16,8 +16,7 @@ export default function HabitQuickEntry({ habit, addingEntry, onQuickEntry, onDe
     <Card className="mb-6 border-l-4 border-l-green-500">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
-          <Plus className="w-5 h-5 text-green-600" />
-          Quick Entry
+          Did you <span className={habit.badHabit ? "text-red-500" : "text-green-500"}>{habit.trackerName.toLowerCase()}</span> today?
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -32,7 +31,7 @@ export default function HabitQuickEntry({ habit, addingEntry, onQuickEntry, onDe
             }`}
           >
             <CheckCircle className="w-4 h-4 mr-2" />
-            {addingEntry ? 'Adding...' : (habit.badHabit ? 'Yes' : 'Mark Completed')}
+            {addingEntry ? 'Adding...' : 'Yes'}
           </Button>
           <Button
             onClick={() => onQuickEntry(false)}
@@ -44,7 +43,7 @@ export default function HabitQuickEntry({ habit, addingEntry, onQuickEntry, onDe
                 : 'border-red-300 text-red-600 hover:bg-red-50'
             }`}
           >
-            {habit.badHabit ? 'No' : 'Mark Missed'}
+            No
           </Button>
           <Button
             onClick={onDetailedEntry}
