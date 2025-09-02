@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Target, Calendar, Plus, Loader2, Settings, BarChart } from 'lucide-react';
-import { habitApi } from '../services/api';
+import { habitApi, targetApi } from '../services/api';
 import type { HabitTracker, TargetTracker, Entry } from '../types';
 import { useDashboard, useDueCounts } from '../hooks/useDashboard';
 import WeeklyCalendar from './WeeklyCalendar';
@@ -135,10 +135,7 @@ function HabitCard({ habit, entries }: HabitCardProps) {
   return (
     <Card 
       className="bg-white border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-      onClick={() => {
-        console.log('Navigating to habit:', habit.id);
-        navigate(`/habit/${habit.id}`);
-      }}
+      onClick={() => navigate(`/habit/${habit.id}`)}
     >
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
@@ -185,10 +182,7 @@ function TargetCard({ target, entries }: TargetCardProps) {
   return (
     <Card 
       className="bg-white border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-      onClick={() => {
-        console.log('Navigating to target:', target.id);
-        navigate(`/target/${target.id}`);
-      }}
+      onClick={() => navigate(`/target/${target.id}`)}
     >
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
@@ -248,7 +242,7 @@ export default function Dashboard() {
       // Fetch target entries  
       const targetEntriesPromises = dashboard.targetTrackers?.map(async (target) => {
         try {
-          const entries = await habitApi.getEntries(target.id);
+          const entries = await targetApi.getEntries(target.id);
           return { id: target.id, entries };
         } catch (error) {
           console.error(`Failed to fetch entries for target ${target.id}:`, error);
@@ -276,6 +270,49 @@ export default function Dashboard() {
 
   const handleEntryAdded = () => {
     refetch();
+    // Re-fetch all entries to update grouping
+    const fetchAllEntries = async () => {
+      if (!dashboard) return;
+      
+      // Fetch habit entries
+      const habitEntriesPromises = dashboard.habitTrackers?.map(async (habit) => {
+        try {
+          const entries = await habitApi.getEntries(habit.id);
+          return { id: habit.id, entries };
+        } catch (error) {
+          console.error(`Failed to fetch entries for habit ${habit.id}:`, error);
+          return { id: habit.id, entries: [] };
+        }
+      }) || [];
+      
+      // Fetch target entries  
+      const targetEntriesPromises = dashboard.targetTrackers?.map(async (target) => {
+        try {
+          const entries = await targetApi.getEntries(target.id);
+          return { id: target.id, entries };
+        } catch (error) {
+          console.error(`Failed to fetch entries for target ${target.id}:`, error);
+          return { id: target.id, entries: [] };
+        }
+      }) || [];
+      
+      const [habitResults, targetResults] = await Promise.all([
+        Promise.all(habitEntriesPromises),
+        Promise.all(targetEntriesPromises)
+      ]);
+      
+      // Update state
+      const newHabitEntries = new Map();
+      habitResults.forEach(({ id, entries }) => newHabitEntries.set(id, entries));
+      setHabitEntries(newHabitEntries);
+      
+      const newTargetEntries = new Map();
+      targetResults.forEach(({ id, entries }) => newTargetEntries.set(id, entries));
+      setTargetEntries(newTargetEntries);
+    };
+    
+    // Small delay to ensure the new entry is saved before refetching
+    setTimeout(fetchAllEntries, 100);
   };
 
   const isToday = selectedDate.toDateString() === new Date().toDateString();

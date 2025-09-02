@@ -79,8 +79,6 @@ export default function HabitCalendar({ habit, entries, onDateClick }: HabitCale
       const weekStart = new Date(currentDate);
       const weekEnd = new Date(currentDate);
       weekEnd.setDate(weekStart.getDate() + 6);
-      console.log("weekStart", weekStart)
-      console.log("weekEnd", weekEnd)
       
       weeklyCount = entries.filter(entry => {
         const entryDate = new Date(entry.date);

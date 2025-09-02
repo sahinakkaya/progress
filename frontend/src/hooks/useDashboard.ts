@@ -34,12 +34,10 @@ export function useDashboard(inputDate?: Date): UseDashboardReturn {
       // Format date manually to avoid timezone issues
       const dateString = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
       
-      console.log('Fetching dashboard data for:', dateString);
 
       // Call API with date parameter
       const data = await dashboardApi.getDashboard(dateString);
       
-      console.log('Dashboard API response:', data);
       setDashboard(data);
     } catch (err) {
       console.error('Dashboard fetch error:', err);
@@ -116,13 +114,6 @@ export function useDueCounts(selectedDate?: Date) {
             const targetCount = dayData.targetTrackers?.length || 0;
             const totalDue = habitCount + targetCount;
             
-            console.log(`Due counts for ${dateString}:`, {
-              habits: habitCount,
-              targets: targetCount,
-              total: totalDue,
-              habitData: dayData.habitTrackers,
-              targetData: dayData.targetTrackers
-            });
             
             counts[dateString] = totalDue;
           } catch (error) {

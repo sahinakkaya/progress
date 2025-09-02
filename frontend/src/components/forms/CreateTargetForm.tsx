@@ -118,7 +118,6 @@ export default function CreateTargetForm({ open, onOpenChange, onSuccess }: Crea
         due,
       };
 
-      console.log('Creating target:', targetData);
       await targetApi.create(targetData);
       
       // Reset form

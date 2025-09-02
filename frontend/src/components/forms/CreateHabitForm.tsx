@@ -108,7 +108,6 @@ export default function CreateHabitForm({ open, onOpenChange, onSuccess }: Creat
         goalStreak: formData.goalStreak ? parseInt(formData.goalStreak) : undefined,
       };
 
-      console.log('Creating habit:', habitData);
       await habitApi.create(habitData);
 
       // Reset form
