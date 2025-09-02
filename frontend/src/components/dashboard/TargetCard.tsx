@@ -42,17 +42,6 @@ export default function TargetCard({ target, entries, selectedDate, onQuickLog }
   const daysRemaining = Math.max(0, metrics.daysUntilGoal);
   const dailyRequired = metrics.dailyRequired;
   
-  // Status for progress using existing logic
-  const getProgressStatus = () => {
-    if (metrics.currentValue >= target.goalValue) return { text: 'Goal reached!', color: 'text-green-600' };
-    return { 
-      text: `Pace: ${metrics.pace.toFixed(1)}`, 
-      color: metrics.aheadPace ? 'text-green-600' : 'text-red-600' 
-    };
-  };
-  
-  const progressStatus = getProgressStatus();
-
   const handleTouchStart = (e: React.TouchEvent) => {
     startX.current = e.touches[0].clientX;
     setIsDragging(true);
