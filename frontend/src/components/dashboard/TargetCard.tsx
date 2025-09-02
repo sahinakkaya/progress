@@ -24,6 +24,7 @@ export default function TargetCard({ target, entries, selectedDate, onQuickLog }
   const cardRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const startX = useRef(0);
+  const startY = useRef(0);
   const SWIPE_THRESHOLD = 80;
 
   const metrics = calculateTargetMetrics(target, entries);
@@ -44,6 +45,7 @@ export default function TargetCard({ target, entries, selectedDate, onQuickLog }
   
   const handleTouchStart = (e: React.TouchEvent) => {
     startX.current = e.touches[0].clientX;
+    startY.current = e.touches[0].clientY;
     setIsDragging(true);
     setHasStartedSwipe(false);
   };
@@ -52,15 +54,27 @@ export default function TargetCard({ target, entries, selectedDate, onQuickLog }
     if (!isDragging) return;
     
     const currentX = e.touches[0].clientX;
-    const diff = currentX - startX.current;
+    const currentY = e.touches[0].clientY;
+    const diffX = currentX - startX.current;
+    const diffY = currentY - startY.current;
     
-    // Mark as swipe if moved more than 10px
-    if (Math.abs(diff) > 10) {
+    // Only register horizontal swipe if horizontal movement is significantly larger than vertical
+    const isHorizontalSwipe = Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 20;
+    
+    if (!isHorizontalSwipe) {
+      // If it's more vertical movement, cancel the swipe
+      setIsDragging(false);
+      setSwipeOffset(0);
+      return;
+    }
+    
+    // Mark as swipe if moved more than 20px horizontally
+    if (Math.abs(diffX) > 20) {
       setHasStartedSwipe(true);
     }
     
     const maxOffset = 120;
-    const clampedOffset = Math.max(-maxOffset, Math.min(maxOffset, diff));
+    const clampedOffset = Math.max(-maxOffset, Math.min(maxOffset, diffX));
     setSwipeOffset(clampedOffset);
   };
 
