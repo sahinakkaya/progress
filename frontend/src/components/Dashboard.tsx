@@ -96,7 +96,19 @@ export default function Dashboard() {
       <div className="bg-blue-600 text-white p-4">
         <div className="flex items-center justify-between mb-4">
           <Settings className="w-6 h-6" />
-          <h1 className="text-xl font-semibold">Today</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-semibold">
+              {isToday ? 'Today' : selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </h1>
+            {!isToday && (
+              <button
+                onClick={() => setSelectedDate(new Date())}
+                className="text-sm bg-blue-500 hover:bg-blue-400 px-3 py-1 rounded-full transition-colors"
+              >
+                Go to Today
+              </button>
+            )}
+          </div>
           <BarChart className="w-6 h-6" />
         </div>
         

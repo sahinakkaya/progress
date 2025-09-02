@@ -1,5 +1,5 @@
 // src/components/WeeklyCalendar.tsx - Mobile-style horizontal calendar
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface WeeklyCalendarProps {
   selectedDate: Date;
@@ -19,6 +19,7 @@ interface DayInfo {
 
 export default function WeeklyCalendar({ selectedDate, onDateChange, dueCounts = {} }: WeeklyCalendarProps) {
   const [weekStart, setWeekStart] = useState<Date>(new Date());
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // Calculate week start (Monday) for given date
   const getWeekStart = (date: Date): Date => {
@@ -29,26 +30,40 @@ export default function WeeklyCalendar({ selectedDate, onDateChange, dueCounts =
     return d;
   };
 
-  // Generate week days array starting from Monday
-  const getWeekDays = (weekStart: Date): DayInfo[] => {
+  // Generate extended days array for scrolling (6 weeks)
+  const getExtendedDays = (centerWeekStart: Date): DayInfo[] => {
     const days: DayInfo[] = [];
     const today = new Date();
     const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const selectedLocal = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
 
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + i);
+    // Start from three weeks before the center week
+    const startDate = new Date(centerWeekStart);
+    startDate.setDate(startDate.getDate() - 21);
+
+    // Generate 42 days (6 weeks) to fill screen
+    for (let i = 0; i < 42; i++) {
+      const date = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + i);
       const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
       
       const isToday = date.getTime() === todayLocal.getTime();
       const isSelected = date.getTime() === selectedLocal.getTime();
 
+      // Calculate days difference from today
+      const daysDiff = Math.abs((date.getTime() - todayLocal.getTime()) / (1000 * 60 * 60 * 24));
+      
       const dayNames = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+      const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+      
+      // Show day abbreviation for days within 6 days of today, otherwise show month
+      const dayAbbrev = daysDiff <= 6 
+        ? dayNames[(date.getDay() + 6) % 7] 
+        : monthNames[date.getMonth()];
 
       days.push({
         date,
         dateString,
-        dayAbbrev: dayNames[(date.getDay() + 6) % 7], // Adjust index for Monday start
+        dayAbbrev,
         dayNumber: date.getDate(),
         isToday,
         isSelected,
@@ -64,30 +79,42 @@ export default function WeeklyCalendar({ selectedDate, onDateChange, dueCounts =
     setWeekStart(getWeekStart(selectedDate));
   }, [selectedDate]);
 
-  const weekDays = getWeekDays(weekStart);
+  const extendedDays = getExtendedDays(weekStart);
 
   const handleDateClick = (day: DayInfo) => {
     onDateChange(day.date);
   };
 
+  // Scroll to selected date on mount and when selection changes
+  useEffect(() => {
+    if (scrollRef.current) {
+      const selectedIndex = extendedDays.findIndex(day => day.isSelected);
+      if (selectedIndex >= 0) {
+        const dayWidth = 56; // w-12 + gap
+        const containerWidth = scrollRef.current.clientWidth;
+        const scrollTo = (selectedIndex * dayWidth) - (containerWidth / 2) + (dayWidth / 2);
+        scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
+      }
+    }
+  }, [selectedDate, extendedDays]);
+
   return (
-    <div className="flex justify-center space-x-2 px-2">
-      {weekDays.map((day) => (
+    <div 
+      ref={scrollRef}
+      className="flex space-x-2 px-2 overflow-x-auto scrollbar-hide"
+      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+    >
+      {extendedDays.map((day) => (
         <div
           key={day.dateString}
-          className="flex flex-col items-center cursor-pointer"
+          className="flex flex-col items-center cursor-pointer flex-shrink-0"
           onClick={() => handleDateClick(day)}
         >
-          {/* Day abbreviation */}
-          <div className="text-xs text-blue-200 mb-1 font-medium">
-            {day.dayAbbrev}
-          </div>
-          
-          {/* Date circle */}
+          {/* Date circle with day and number */}
           <div
             className={`
-              relative w-10 h-10 rounded-full flex items-center justify-center
-              text-sm font-medium transition-all duration-200
+              relative w-12 h-12 rounded-full flex flex-col items-center justify-center
+              text-xs font-medium transition-all duration-200
               ${day.isSelected
                 ? 'bg-white text-blue-600 shadow-md'
                 : day.isToday
@@ -96,22 +123,8 @@ export default function WeeklyCalendar({ selectedDate, onDateChange, dueCounts =
               }
             `}
           >
-            {day.dayNumber}
-            
-            {/* Due count badge */}
-            {day.dueCount > 0 && (
-              <div
-                className={`
-                  absolute -top-1 -right-1 h-5 w-5 rounded-full flex items-center justify-center text-xs font-medium
-                  ${day.isSelected 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-red-500 text-white'
-                  }
-                `}
-              >
-                {day.dueCount}
-              </div>
-            )}
+            <div className="text-xs">{day.dayAbbrev}</div>
+            <div className="text-sm font-semibold">{day.dayNumber}</div>
           </div>
 
           {/* Today indicator dot */}
