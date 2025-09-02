@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle, Loader2 } from 'lucide-react';
 import type { HabitTracker, Entry } from '../../types';
+import { useHabitStreak } from '../../hooks/useHabitStreak';
 
 interface HabitCardProps {
   habit: HabitTracker;
@@ -129,6 +130,7 @@ export default function HabitCard({ habit, entries, selectedDate, onQuickLog }: 
   };
 
   const status = getHabitStatus();
+  const currentStreak = useHabitStreak(entries, habit);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startX.current = e.touches[0].clientX;
@@ -273,7 +275,14 @@ export default function HabitCard({ habit, entries, selectedDate, onQuickLog }: 
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-900">{habit.trackerName}</h3>
-                  <p className="text-sm text-gray-500">{status.statusText}</p>
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm text-gray-500">{status.statusText}</p>
+                    {currentStreak > 0 && (
+                      <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
+                        Current streak: 🔥 {currentStreak}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="text-right">
