@@ -30,19 +30,19 @@ export default function WeeklyCalendar({ selectedDate, onDateChange, dueCounts =
     return d;
   };
 
-  // Generate extended days array for scrolling (6 weeks)
+  // Generate extended days array for scrolling (12 months)
   const getExtendedDays = (centerWeekStart: Date): DayInfo[] => {
     const days: DayInfo[] = [];
     const today = new Date();
     const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const selectedLocal = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
 
-    // Start from three weeks before the center week
+    // Start from 6 months before the center week
     const startDate = new Date(centerWeekStart);
-    startDate.setDate(startDate.getDate() - 21);
+    startDate.setDate(startDate.getDate() - 180);
 
-    // Generate 42 days (6 weeks) to fill screen
-    for (let i = 0; i < 42; i++) {
+    // Generate 365 days (12 months) for scrolling
+    for (let i = 0; i < 365; i++) {
       const date = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + i);
       const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
       
