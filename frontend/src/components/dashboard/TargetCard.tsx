@@ -27,7 +27,7 @@ export default function TargetCard({ target, entries, selectedDate, onQuickLog }
   const SWIPE_THRESHOLD = 80;
 
   const metrics = calculateTargetMetrics(target, entries);
-  const goalDate = new Date(target.goalDate).toLocaleDateString('en-US', { 
+  const goalDateFormatted = new Date(target.goalDate).toLocaleDateString('en-US', { 
     month: 'short', 
     day: 'numeric', 
     year: 'numeric' 
@@ -36,6 +36,22 @@ export default function TargetCard({ target, entries, selectedDate, onQuickLog }
   // Check if target has entry for selected date
   const selectedDateString = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
   const todayEntry = entries.find(entry => entry.date.split('T')[0] === selectedDateString);
+
+  // Use existing metrics from targetUtils
+  const progressPercentage = metrics.displayPercentage;
+  const daysRemaining = Math.max(0, metrics.daysUntilGoal);
+  const dailyRequired = metrics.dailyRequired;
+  
+  // Status for progress using existing logic
+  const getProgressStatus = () => {
+    if (metrics.currentValue >= target.goalValue) return { text: 'Goal reached!', color: 'text-green-600' };
+    return { 
+      text: `Pace: ${metrics.pace.toFixed(1)}`, 
+      color: metrics.aheadPace ? 'text-green-600' : 'text-red-600' 
+    };
+  };
+  
+  const progressStatus = getProgressStatus();
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startX.current = e.touches[0].clientX;
@@ -186,14 +202,41 @@ export default function TargetCard({ target, entries, selectedDate, onQuickLog }
                       {target.trackerName.charAt(0).toUpperCase()}
                     </span>
                   </div>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-gray-900">{target.trackerName}</h3>
-                    <p className="text-sm text-gray-500">Goal: {target.goalValue} by {goalDate}</p>
+                    <p className="text-sm text-gray-500 mb-2">Goal: {target.goalValue} by {goalDateFormatted}</p>
+                    
+                    {/* Progress bar */}
+                    <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
+                      <div 
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          progressPercentage >= 100 ? 'bg-green-500' :
+                          progressPercentage >= 75 ? 'bg-green-400' :
+                          progressPercentage >= 50 ? 'bg-yellow-400' :
+                          progressPercentage >= 25 ? 'bg-orange-400' : 'bg-red-400'
+                        }`}
+                        style={{ width: `${Math.min(progressPercentage, 100)}%` }}
+                      />
+                    </div>
+                    
+                    {/* Progress info */}
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>{Math.round(progressPercentage)}% ({metrics.currentValue}/{target.goalValue})</span>
+                      <span className={progressStatus.color}>{progressStatus.text}</span>
+                    </div>
+                    
+                    {/* Days remaining and daily required */}
+                    {daysRemaining > 0 && dailyRequired > 0 && (
+                      <div className="flex items-center space-x-3 mt-1 text-xs text-gray-500">
+                        <span>📅 {daysRemaining} days left</span>
+                        <span>• Need {Math.round(dailyRequired * 10) / 10}/day</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-right ml-4">
                   <div className="text-2xl font-semibold text-blue-500">{metrics.currentValue}</div>
-                  <div className={metrics.currentValue > metrics.pace ? "text-md text-green-500" : "text-md text-red-500"}>Pace: {Math.round(metrics.pace * 10) / 10}</div>
+                  <div className="text-xs text-gray-400">Current</div>
                 </div>
               </div>
             </div>

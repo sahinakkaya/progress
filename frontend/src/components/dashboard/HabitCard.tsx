@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle, Loader2 } from 'lucide-react';
 import type { HabitTracker, Entry } from '../../types';
 import { useHabitStreak } from '../../hooks/useHabitStreak';
 
