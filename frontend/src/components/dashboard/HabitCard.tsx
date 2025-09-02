@@ -147,18 +147,15 @@ export default function HabitCard({ habit, entries, selectedDate, onQuickLog }: 
     const diffX = currentX - startX.current;
     const diffY = currentY - startY.current;
     
-    // Only register horizontal swipe if horizontal movement is significantly larger than vertical
-    const isHorizontalSwipe = Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 20;
-    
-    if (!isHorizontalSwipe) {
-      // If it's more vertical movement, cancel the swipe
+    // Cancel if vertical movement is larger (user is scrolling)
+    if (Math.abs(diffY) > 15 && Math.abs(diffY) > Math.abs(diffX)) {
       setIsDragging(false);
       setSwipeOffset(0);
       return;
     }
     
-    // Mark as swipe if moved more than 20px horizontally
-    if (Math.abs(diffX) > 20) {
+    // Mark as swipe if moved more than 10px horizontally
+    if (Math.abs(diffX) > 10) {
       setHasStartedSwipe(true);
     }
     
