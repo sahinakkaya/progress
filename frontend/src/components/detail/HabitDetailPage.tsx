@@ -15,6 +15,7 @@ import HabitQuickEntry from './HabitQuickEntry';
 import HabitCalendar from './HabitCalendar';
 import HabitMetrics from './HabitMetrics';
 import HabitModals from './HabitModals';
+import { useHabitStreak } from '../../hooks/useHabitStreak';
 import { 
   calculatePeriodData, 
   calculateStreaks, 
@@ -283,16 +284,6 @@ export default function HabitDetailPage() {
 
   // Calculate stats and metrics
   
-  // Calculate current streak (simple version for header)
-  const sortedEntries = [...entries].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  let currentStreak = 0;
-  for (const entry of sortedEntries) {
-    if (entry.done) {
-      currentStreak++;
-    } else {
-      break;
-    }
-  }
 
   // Calculate all metrics using helper functions
   const periods = calculatePeriodData(
@@ -305,6 +296,7 @@ export default function HabitDetailPage() {
   );
   
   const streaks = calculateStreaks(periods);
+  const currentStreak = useHabitStreak(entries, habit);
   const goalProgress = calculateGoalProgress(
     periods, 
     habit.timePeriod === 'perDay' ? 'days' : 
@@ -367,7 +359,7 @@ export default function HabitDetailPage() {
                 
                 <HabitMetrics
                   habit={habit}
-                  streaks={streaks}
+                  streaks={{...streaks, current: currentStreak}}
                   goalProgress={goalProgress}
                   barChartData={barChartData}
                 />
