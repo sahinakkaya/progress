@@ -271,8 +271,73 @@ export default function HabitCalendar({ habit, entries, onDateClick }: HabitCale
     currentDate.setDate(currentDate.getDate() + 1);
   }
 
+  // Calculate monthly progress for monthly bad habits
+  const getMonthlyProgress = () => {
+    if (habit.timePeriod !== 'perMonth' || !habit.badHabit) return null;
+    
+    const startOfMonth = new Date(currentYear, currentMonth, 1);
+    const endOfMonth = new Date(currentYear, currentMonth + 1, 0);
+    
+    const monthEntries = entries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      return entryDate >= startOfMonth && entryDate <= endOfMonth && entry.done;
+    });
+    
+    const count = monthEntries.length;
+    const isOverLimit = count > habit.goal;
+    
+    // For bad habits: progress decreases linearly as count increases
+    // For limit of 2: 0=100%, 1=66%, 2=33%, 3+=100% red
+    let percentage;
+    if (isOverLimit) {
+      percentage = 100; // Full red bar when over limit
+    } else {
+      // Green progress decreases linearly: 100% - (count / (goal + 1)) * 100%
+      percentage = 100 - ((count / (habit.goal + 1)) * 100);
+    }
+    
+    return {
+      count,
+      isOverLimit,
+      percentage,
+      isGood: count === 0
+    };
+  };
+
+  const monthlyProgress = getMonthlyProgress();
+
   return (
     <div className="mb-6">
+      {/* Monthly Progress Bar for Monthly Bad Habits */}
+      {monthlyProgress && (
+        <div className="mb-4">
+          <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+            <span>Monthly Progress</span>
+            <span>{monthlyProgress.count}/{habit.goal} limit</span>
+          </div>
+          <div className="relative w-full h-4 bg-gray-200 rounded-full overflow-hidden">
+            {monthlyProgress.isOverLimit ? (
+              // When over limit, show full red bar
+              <div className="h-full bg-red-500 transition-all duration-300" style={{ width: '100%' }} />
+            ) : (
+              // When within limit, show green progress + red remaining
+              <>
+                <div className="h-full bg-red-500 transition-all duration-300" style={{ width: '100%' }} />
+                <div 
+                  className="absolute top-0 left-0 h-full bg-green-500 transition-all duration-300"
+                  style={{ width: `${monthlyProgress.percentage}%` }}
+                />
+              </>
+            )}
+            {/* Goal limit line */}
+            <div 
+              className="absolute top-0 h-full w-0.5 bg-gray-600 opacity-70"
+              style={{ left: `${100 - ((habit.goal / (habit.goal + 1)) * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Month Navigation Header */}
       <div className="flex items-center justify-between mb-4">
         <Button
