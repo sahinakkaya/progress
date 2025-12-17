@@ -62,38 +62,20 @@ export function useDashboardEntries(dashboard: DashboardResponse | null, selecte
     const today = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
     const completedEntries = entries.filter(entry => entry.done === true);
 
+    // Check if done today
+    const todayEntries = completedEntries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      const entryDay = new Date(entryDate.getFullYear(), entryDate.getMonth(), entryDate.getDate());
+      return entryDay.getTime() === today.getTime();
+    });
+
     if (habit.timePeriod === 'perDay') {
-      const todayEntries = completedEntries.filter(entry => {
-        const entryDate = new Date(entry.date);
-        const entryDay = new Date(entryDate.getFullYear(), entryDate.getMonth(), entryDate.getDate());
-        return entryDay.getTime() === today.getTime();
-      });
+      // For daily habits, check if today's goal is met
       return todayEntries.length < habit.goal;
-    } else if (habit.timePeriod === 'perWeek') {
-      const startOfWeek = new Date(today);
-      const day = startOfWeek.getDay();
-      const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
-      startOfWeek.setDate(diff);
-      startOfWeek.setHours(0, 0, 0, 0);
-
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(endOfWeek.getDate() + 6);
-      endOfWeek.setHours(23, 59, 59, 999);
-
-      const thisWeekEntries = completedEntries.filter(entry => {
-        const entryDate = new Date(entry.date);
-        return entryDate >= startOfWeek && entryDate <= endOfWeek;
-      });
-      return thisWeekEntries.length < habit.goal;
-    } else if (habit.timePeriod === 'perMonth') {
-      const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-      const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59, 999);
-
-      const thisMonthEntries = completedEntries.filter(entry => {
-        const entryDate = new Date(entry.date);
-        return entryDate >= startOfMonth && entryDate <= endOfMonth;
-      });
-      return thisMonthEntries.length < habit.goal;
+    } else if (habit.timePeriod === 'perWeek' || habit.timePeriod === 'perMonth') {
+      // For weekly/monthly habits, if done today, it's completed for the day
+      // You can't do it multiple times in one day, so it moves to completed section
+      return todayEntries.length === 0;
     }
     return true;
   };
