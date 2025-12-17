@@ -40,6 +40,17 @@ func GetAllTrackers(w http.ResponseWriter, r *http.Request) {
 			currentValue = targets[i].StartValue
 		}
 		targets[i].CurrentValue = &currentValue
+
+		// Set original start value (always the database value)
+		targets[i].OriginalStartValue = targets[i].StartValue
+
+		// Adjust start value if UseActualBounds is true
+		if targets[i].UseActualBounds {
+			adjustedStartValue, err := database.GetAdjustedStartValue(&targets[i])
+			if err == nil {
+				targets[i].StartValue = adjustedStartValue
+			}
+		}
 	}
 
 	response := trackers.TrackersResponse{
@@ -110,6 +121,18 @@ func GetDashboard(w http.ResponseWriter, r *http.Request) {
 				currentValue = target.StartValue
 			}
 			target.CurrentValue = &currentValue
+
+			// Set original start value (always the database value)
+			target.OriginalStartValue = target.StartValue
+
+			// Adjust start value if UseActualBounds is true
+			if target.UseActualBounds {
+				adjustedStartValue, err := database.GetAdjustedStartValue(&target)
+				if err == nil {
+					target.StartValue = adjustedStartValue
+				}
+			}
+
 			dashboardTargets = append(dashboardTargets, target)
 		}
 	}
