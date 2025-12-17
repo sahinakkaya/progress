@@ -53,44 +53,95 @@ export function useDashboardEntries(dashboard: DashboardResponse | null, selecte
 
   // Helper function to check if habit needs action
   const habitNeedsAction = (habit: HabitTracker): boolean => {
+    // Bad habits never "need action" - they either succeeded or failed
+    if (habit.badHabit) {
+      return false;
+    }
+
     const entries = habitEntries.get(habit.id) || [];
     const today = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
     const completedEntries = entries.filter(entry => entry.done === true);
-    
+
     if (habit.timePeriod === 'perDay') {
       const todayEntries = completedEntries.filter(entry => {
         const entryDate = new Date(entry.date);
         const entryDay = new Date(entryDate.getFullYear(), entryDate.getMonth(), entryDate.getDate());
         return entryDay.getTime() === today.getTime();
       });
-      return habit.badHabit ? todayEntries.length > habit.goal : todayEntries.length < habit.goal;
+      return todayEntries.length < habit.goal;
     } else if (habit.timePeriod === 'perWeek') {
       const startOfWeek = new Date(today);
       const day = startOfWeek.getDay();
       const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
       startOfWeek.setDate(diff);
       startOfWeek.setHours(0, 0, 0, 0);
-      
+
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(endOfWeek.getDate() + 6);
       endOfWeek.setHours(23, 59, 59, 999);
-      
+
       const thisWeekEntries = completedEntries.filter(entry => {
         const entryDate = new Date(entry.date);
         return entryDate >= startOfWeek && entryDate <= endOfWeek;
       });
-      return habit.badHabit ? thisWeekEntries.length > habit.goal : thisWeekEntries.length < habit.goal;
+      return thisWeekEntries.length < habit.goal;
     } else if (habit.timePeriod === 'perMonth') {
       const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
       const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59, 999);
-      
+
       const thisMonthEntries = completedEntries.filter(entry => {
         const entryDate = new Date(entry.date);
         return entryDate >= startOfMonth && entryDate <= endOfMonth;
       });
-      return habit.badHabit ? thisMonthEntries.length > habit.goal : thisMonthEntries.length < habit.goal;
+      return thisMonthEntries.length < habit.goal;
     }
     return true;
+  };
+
+  // Helper function to check if bad habit has failed (exceeded goal)
+  const badHabitHasFailed = (habit: HabitTracker): boolean => {
+    if (!habit.badHabit) {
+      return false;
+    }
+
+    const entries = habitEntries.get(habit.id) || [];
+    const today = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+    const completedEntries = entries.filter(entry => entry.done === true);
+
+    if (habit.timePeriod === 'perDay') {
+      const todayEntries = completedEntries.filter(entry => {
+        const entryDate = new Date(entry.date);
+        const entryDay = new Date(entryDate.getFullYear(), entryDate.getMonth(), entryDate.getDate());
+        return entryDay.getTime() === today.getTime();
+      });
+      return todayEntries.length > habit.goal;
+    } else if (habit.timePeriod === 'perWeek') {
+      const startOfWeek = new Date(today);
+      const day = startOfWeek.getDay();
+      const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
+      startOfWeek.setDate(diff);
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(endOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+
+      const thisWeekEntries = completedEntries.filter(entry => {
+        const entryDate = new Date(entry.date);
+        return entryDate >= startOfWeek && entryDate <= endOfWeek;
+      });
+      return thisWeekEntries.length > habit.goal;
+    } else if (habit.timePeriod === 'perMonth') {
+      const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+      const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59, 999);
+
+      const thisMonthEntries = completedEntries.filter(entry => {
+        const entryDate = new Date(entry.date);
+        return entryDate >= startOfMonth && entryDate <= endOfMonth;
+      });
+      return thisMonthEntries.length > habit.goal;
+    }
+    return false;
   };
 
   // Helper function to check if target needs action
@@ -144,6 +195,7 @@ export function useDashboardEntries(dashboard: DashboardResponse | null, selecte
     habitEntries,
     targetEntries,
     habitNeedsAction,
+    badHabitHasFailed,
     targetNeedsAction,
     refetchEntries
   };

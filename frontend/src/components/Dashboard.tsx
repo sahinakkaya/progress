@@ -18,7 +18,7 @@ export default function Dashboard() {
   
   const { dashboard, loading, error, refetch, selectedDate, setSelectedDate } = useDashboard();
   const { dueCounts } = useDueCounts(selectedDate);
-  const { habitEntries, targetEntries, habitNeedsAction, targetNeedsAction, refetchEntries } = useDashboardEntries(dashboard, selectedDate);
+  const { habitEntries, targetEntries, habitNeedsAction, badHabitHasFailed, targetNeedsAction, refetchEntries } = useDashboardEntries(dashboard, selectedDate);
 
   useEffect(() => {
     document.title = 'Dashboard | Progress';
@@ -138,6 +138,7 @@ export default function Dashboard() {
                 entries={habitEntries.get(habit.id) || []}
                 selectedDate={selectedDate}
                 onQuickLog={(done: boolean) => handleHabitQuickLog(habit.id, done)}
+                hasFailed={badHabitHasFailed(habit)}
               />
             ))}
             {targetsNeedingAction.map(target => (
@@ -163,6 +164,7 @@ export default function Dashboard() {
                 entries={habitEntries.get(habit.id) || []}
                 selectedDate={selectedDate}
                 onQuickLog={(done: boolean) => handleHabitQuickLog(habit.id, done)}
+                hasFailed={badHabitHasFailed(habit)}
               />
             ))}
             {targetsCompleted.map(target => (

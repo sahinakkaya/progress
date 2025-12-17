@@ -9,9 +9,10 @@ interface HabitCardProps {
   entries: Entry[];
   selectedDate: Date;
   onQuickLog: (done: boolean) => void;
+  hasFailed?: boolean;
 }
 
-export default function HabitCard({ habit, entries, selectedDate, onQuickLog }: HabitCardProps) {
+export default function HabitCard({ habit, entries, selectedDate, onQuickLog, hasFailed = false }: HabitCardProps) {
   const navigate = useNavigate();
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -25,10 +26,10 @@ export default function HabitCard({ habit, entries, selectedDate, onQuickLog }: 
   // Calculate period-based status
   const getHabitStatus = () => {
     const today = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-    
+
     // Get completed entries only
     const completedEntries = entries.filter(entry => entry.done === true);
-    
+
     if (habit.timePeriod === 'perDay') {
       // Count today's entries
       const todayEntries = completedEntries.filter(entry => {
@@ -36,8 +37,19 @@ export default function HabitCard({ habit, entries, selectedDate, onQuickLog }: 
         const entryDay = new Date(entryDate.getFullYear(), entryDate.getMonth(), entryDate.getDate());
         return entryDay.getTime() === today.getTime();
       });
-      
-      // Check yesterday's entries
+
+      const todayCount = todayEntries.length;
+
+      // For bad habits, show different status based on whether they failed
+      if (habit.badHabit) {
+        return {
+          statusText: hasFailed ? 'Failed - exceeded limit' : todayCount === 0 ? 'Perfect!' : 'Within limit',
+          progress: `${todayCount}/${habit.goal}`,
+          period: 'today'
+        };
+      }
+
+      // For regular habits, check yesterday's entries
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayEntries = completedEntries.filter(entry => {
@@ -45,13 +57,13 @@ export default function HabitCard({ habit, entries, selectedDate, onQuickLog }: 
         const entryDay = new Date(entryDate.getFullYear(), entryDate.getMonth(), entryDate.getDate());
         return entryDay.getTime() === yesterday.getTime();
       });
-      
-      const todayCount = Math.min(todayEntries.length, habit.goal);
+
+      const displayCount = Math.min(todayCount, habit.goal);
       const missedYesterday = yesterdayEntries.length < habit.goal;
-      
+
       return {
         statusText: missedYesterday ? 'Missed yesterday' : 'On track',
-        progress: `${todayCount}/${habit.goal}`,
+        progress: `${displayCount}/${habit.goal}`,
         period: 'today'
       };
       
@@ -62,33 +74,44 @@ export default function HabitCard({ habit, entries, selectedDate, onQuickLog }: 
       const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday
       startOfWeek.setDate(diff);
       startOfWeek.setHours(0, 0, 0, 0);
-      
+
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(endOfWeek.getDate() + 6);
       endOfWeek.setHours(23, 59, 59, 999);
-      
-      // Previous week
-      const startOfLastWeek = new Date(startOfWeek);
-      startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
-      const endOfLastWeek = new Date(startOfWeek);
-      endOfLastWeek.setDate(endOfLastWeek.getDate() - 1);
-      
+
       const thisWeekEntries = completedEntries.filter(entry => {
         const entryDate = new Date(entry.date);
         return entryDate >= startOfWeek && entryDate <= endOfWeek;
       });
-      
+
+      const thisWeekCount = thisWeekEntries.length;
+
+      // For bad habits, show different status
+      if (habit.badHabit) {
+        return {
+          statusText: hasFailed ? 'Failed - exceeded limit' : thisWeekCount === 0 ? 'Perfect!' : 'Within limit',
+          progress: `${thisWeekCount}/${habit.goal}`,
+          period: 'this week'
+        };
+      }
+
+      // For regular habits, check last week
+      const startOfLastWeek = new Date(startOfWeek);
+      startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
+      const endOfLastWeek = new Date(startOfWeek);
+      endOfLastWeek.setDate(endOfLastWeek.getDate() - 1);
+
       const lastWeekEntries = completedEntries.filter(entry => {
         const entryDate = new Date(entry.date);
         return entryDate >= startOfLastWeek && entryDate <= endOfLastWeek;
       });
-      
-      const thisWeekCount = Math.min(thisWeekEntries.length, habit.goal);
+
+      const displayCount = Math.min(thisWeekCount, habit.goal);
       const missedLastWeek = lastWeekEntries.length < habit.goal;
-      
+
       return {
         statusText: missedLastWeek ? 'Missed last week' : 'On track',
-        progress: `${thisWeekCount}/${habit.goal}`,
+        progress: `${displayCount}/${habit.goal}`,
         period: 'this week'
       };
       
@@ -96,27 +119,38 @@ export default function HabitCard({ habit, entries, selectedDate, onQuickLog }: 
       // Selected date's month
       const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
       const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59, 999);
-      
-      // Previous month
-      const startOfLastMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1);
-      const endOfLastMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 0, 23, 59, 59, 999);
-      
+
       const thisMonthEntries = completedEntries.filter(entry => {
         const entryDate = new Date(entry.date);
         return entryDate >= startOfMonth && entryDate <= endOfMonth;
       });
-      
+
+      const thisMonthCount = thisMonthEntries.length;
+
+      // For bad habits, show different status
+      if (habit.badHabit) {
+        return {
+          statusText: hasFailed ? 'Failed - exceeded limit' : thisMonthCount === 0 ? 'Perfect!' : 'Within limit',
+          progress: `${thisMonthCount}/${habit.goal}`,
+          period: 'this month'
+        };
+      }
+
+      // For regular habits, check last month
+      const startOfLastMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1);
+      const endOfLastMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 0, 23, 59, 59, 999);
+
       const lastMonthEntries = completedEntries.filter(entry => {
         const entryDate = new Date(entry.date);
         return entryDate >= startOfLastMonth && entryDate <= endOfLastMonth;
       });
-      
-      const thisMonthCount = Math.min(thisMonthEntries.length, habit.goal);
+
+      const displayCount = Math.min(thisMonthCount, habit.goal);
       const missedLastMonth = lastMonthEntries.length < habit.goal;
-      
+
       return {
         statusText: missedLastMonth ? 'Missed last month' : 'On track',
-        progress: `${thisMonthCount}/${habit.goal}`,
+        progress: `${displayCount}/${habit.goal}`,
         period: 'this month'
       };
     }
@@ -278,8 +312,12 @@ export default function HabitCard({ habit, entries, selectedDate, onQuickLog }: 
           <div className="flex items-center">
             <div className="flex items-center justify-between flex-1 min-w-0">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <span className="text-sm font-semibold text-blue-600">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  hasFailed ? 'bg-red-100' : 'bg-blue-100'
+                }`}>
+                  <span className={`text-sm font-semibold ${
+                    hasFailed ? 'text-red-600' : 'text-blue-600'
+                  }`}>
                     {habit.trackerName.charAt(0).toUpperCase()}
                   </span>
                 </div>
@@ -293,7 +331,9 @@ export default function HabitCard({ habit, entries, selectedDate, onQuickLog }: 
                     )}
                   </div>
                   <div className="flex items-center space-x-2">
-                    <p className="text-sm text-gray-500">{status.statusText}</p>
+                    <p className={`text-sm ${hasFailed ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
+                      {status.statusText}
+                    </p>
                     {currentStreak > 0 && (
                       <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
                         Current streak: 🔥 {currentStreak}
@@ -303,7 +343,9 @@ export default function HabitCard({ habit, entries, selectedDate, onQuickLog }: 
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-semibold text-blue-600">
+                <div className={`text-2xl font-semibold ${
+                  hasFailed ? 'text-red-600' : 'text-blue-600'
+                }`}>
                   {status.progress.split('/')[0]}
                 </div>
                 <div className="text-sm text-gray-500">/{habit.goal}</div>
