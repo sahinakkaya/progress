@@ -224,7 +224,7 @@ export default function TargetCharts({ target, entries, projectedDate, lineVisib
       x: p.dateTime,
       y: p.value
     }));
-    const regression = calculateLinearRegression(regressionPoints);
+    const regression = calculateLinearRegression(regressionPoints, target.trendWeightType || 'none');
     trendSlope = regression.slope;
     trendIntercept = regression.intercept;
 

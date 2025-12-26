@@ -30,6 +30,7 @@ func main() {
 		AllowedOrigins: []string{
 			"http://localhost:5173",  // Vite dev server
 			"http://localhost:3000",  // Docker serve
+			"http://192.168.1.101:5173", // Mobile testing
 			"https://my-progress.sahinakkaya.dev", // Personal instance
 			"https://progress.sahinakkaya.dev",    // Showcase instance
 		},

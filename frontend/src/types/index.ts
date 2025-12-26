@@ -18,6 +18,8 @@ export interface HabitTracker {
   updatedAt: string;
 }
 
+export type TrendWeightType = 'none' | 'linear' | 'sqrt' | 'quadratic' | 'exponential_low' | 'exponential_high';
+
 export interface TargetTracker {
   id: number;
   trackerName: string;
@@ -29,6 +31,7 @@ export interface TargetTracker {
   goalDate: string;
   addToTotal: boolean;
   useActualBounds: boolean;
+  trendWeightType?: TrendWeightType; // Weighting algorithm for trend line
   due: Due;
   createdAt: string;
   updatedAt: string;

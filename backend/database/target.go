@@ -12,14 +12,14 @@ func CreateTargetTracker(t target.TargetTracker) (*target.TargetTracker, error) 
 
 	query := `
         INSERT INTO target_trackers (
-            tracker_name, start_value, goal_value, start_date, goal_date, add_to_total, use_actual_bounds,
+            tracker_name, start_value, goal_value, start_date, goal_date, add_to_total, use_actual_bounds, trend_weight_type,
             due_type, due_specific_days, due_interval_type, due_interval_value,
             reminder_times, reminder_enabled
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
 
 	result, err := DB.Exec(query,
-		t.TrackerName, t.StartValue, t.GoalValue, t.StartDate, t.GoalDate, t.AddToTotal, t.UseActualBounds,
+		t.TrackerName, t.StartValue, t.GoalValue, t.StartDate, t.GoalDate, t.AddToTotal, t.UseActualBounds, t.TrendWeightType,
 		t.Due.Type, string(dueSpecificDays), t.Due.IntervalType, t.Due.IntervalValue,
 		string(reminderTimes), t.Reminders.Enabled,
 	)
@@ -41,7 +41,7 @@ func CreateTargetTracker(t target.TargetTracker) (*target.TargetTracker, error) 
 
 func GetAllTargetTrackers() ([]target.TargetTracker, error) {
 	query := `
-        SELECT id, tracker_name, start_value, goal_value, start_date, goal_date, add_to_total, use_actual_bounds,
+        SELECT id, tracker_name, start_value, goal_value, start_date, goal_date, add_to_total, use_actual_bounds, trend_weight_type,
                due_type, due_specific_days, due_interval_type, due_interval_value,
                reminder_times, reminder_enabled, created_at
         FROM target_trackers ORDER BY created_at DESC
@@ -60,7 +60,7 @@ func GetAllTargetTrackers() ([]target.TargetTracker, error) {
 		var dueSpecificDaysJSON, reminderTimesJSON string
 
 		err := rows.Scan(
-			&t.ID, &t.TrackerName, &t.StartValue, &t.GoalValue, &t.StartDate, &t.GoalDate, &t.AddToTotal, &t.UseActualBounds,
+			&t.ID, &t.TrackerName, &t.StartValue, &t.GoalValue, &t.StartDate, &t.GoalDate, &t.AddToTotal, &t.UseActualBounds, &t.TrendWeightType,
 			&t.Due.Type, &dueSpecificDaysJSON, &t.Due.IntervalType, &t.Due.IntervalValue,
 			&reminderTimesJSON, &t.Reminders.Enabled, &t.CreatedAt,
 		)
@@ -81,7 +81,7 @@ func GetAllTargetTrackers() ([]target.TargetTracker, error) {
 func GetTargetTrackerByID(id int) (*target.TargetTracker, error) {
 
 	query := `
-        SELECT id, tracker_name, start_value, goal_value, start_date, goal_date, add_to_total, use_actual_bounds,
+        SELECT id, tracker_name, start_value, goal_value, start_date, goal_date, add_to_total, use_actual_bounds, trend_weight_type,
                due_type, due_specific_days, due_interval_type, due_interval_value,
                reminder_times, reminder_enabled, created_at
         FROM target_trackers WHERE id = ?
@@ -90,7 +90,7 @@ func GetTargetTrackerByID(id int) (*target.TargetTracker, error) {
 	var dueSpecificDaysJSON, reminderTimesJSON string
 
 	err := DB.QueryRow(query, id).Scan(
-		&t.ID, &t.TrackerName, &t.StartValue, &t.GoalValue, &t.StartDate, &t.GoalDate, &t.AddToTotal, &t.UseActualBounds,
+		&t.ID, &t.TrackerName, &t.StartValue, &t.GoalValue, &t.StartDate, &t.GoalDate, &t.AddToTotal, &t.UseActualBounds, &t.TrendWeightType,
 		&t.Due.Type, &dueSpecificDaysJSON, &t.Due.IntervalType, &t.Due.IntervalValue,
 		&reminderTimesJSON, &t.Reminders.Enabled, &t.CreatedAt,
 	)
@@ -143,6 +143,9 @@ func UpdateTargetTracker(id int, t target.UpdateTargetRequest) error {
 	if t.UseActualBounds != nil {
 		current.UseActualBounds = *t.UseActualBounds
 	}
+	if t.TrendWeightType != nil {
+		current.TrendWeightType = t.TrendWeightType
+	}
 	if t.Due != nil {
 		current.Due = *t.Due
 	}
@@ -156,14 +159,14 @@ func UpdateTargetTracker(id int, t target.UpdateTargetRequest) error {
 
 	query := `
         UPDATE target_trackers SET
-            tracker_name = ?, start_value = ?, goal_value = ?, start_date = ?, goal_date = ?, add_to_total = ?, use_actual_bounds = ?,
+            tracker_name = ?, start_value = ?, goal_value = ?, start_date = ?, goal_date = ?, add_to_total = ?, use_actual_bounds = ?, trend_weight_type = ?,
             due_type = ?, due_specific_days = ?, due_interval_type = ?, due_interval_value = ?,
             reminder_times = ?, reminder_enabled = ?
         WHERE id = ?
     `
 
 	_, err = DB.Exec(query,
-		current.TrackerName, current.StartValue, current.GoalValue, current.StartDate, current.GoalDate, current.AddToTotal, current.UseActualBounds,
+		current.TrackerName, current.StartValue, current.GoalValue, current.StartDate, current.GoalDate, current.AddToTotal, current.UseActualBounds, current.TrendWeightType,
 		current.Due.Type, string(dueSpecificDays), current.Due.IntervalType, current.Due.IntervalValue,
 		string(reminderTimes), current.Reminders.Enabled, id,
 	)

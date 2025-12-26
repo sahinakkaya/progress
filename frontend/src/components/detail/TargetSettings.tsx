@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Settings, Trash2, AlertTriangle, Check, Clock } from 'lucide-react';
 import { targetApi } from '../../services/api';
-import type { TargetTracker } from '../../types';
+import type { TargetTracker, TrendWeightType } from '../../types';
 
 interface TargetSettingsProps {
   target: TargetTracker;
@@ -43,6 +43,7 @@ export default function TargetSettings({ target, onUpdate, onDelete }: TargetSet
     goalDate: new Date(target.goalDate).toISOString().split('T')[0],
     addToTotal: target.addToTotal,
     useActualBounds: target.useActualBounds,
+    trendWeightType: target.trendWeightType || 'none',
     dueType: target.due.type,
     specificDays: target.due.specificDays || [],
     intervalType: target.due.intervalType || 'day',
@@ -66,7 +67,8 @@ export default function TargetSettings({ target, onUpdate, onDelete }: TargetSet
           goalDate: newFormData.goalDate,
           addToTotal: newFormData.addToTotal,
           useActualBounds: newFormData.useActualBounds,
-          due: newFormData.dueType === 'specificDays' 
+          trendWeightType: newFormData.trendWeightType,
+          due: newFormData.dueType === 'specificDays'
             ? {
                 type: 'specificDays' as const,
                 specificDays: newFormData.specificDays,
@@ -233,10 +235,33 @@ export default function TargetSettings({ target, onUpdate, onDelete }: TargetSet
             <div className="flex-1">
               <Label>Use actual data bounds for trend calculations</Label>
               <p className="text-sm text-gray-600 mt-1">
-                When enabled, trend lines will start from your actual progress bounds instead of the original start value. 
+                When enabled, trend lines will start from your actual progress bounds instead of the original start value.
                 This provides more realistic projections when your progress differs from the planned baseline.
               </p>
             </div>
+          </div>
+
+          {/* Trend Weight Type */}
+          <div className="space-y-2">
+            <Label>Trend Line Weighting</Label>
+            <p className="text-sm text-gray-600">
+              Controls how much recent data points influence the trend line projection
+            </p>
+            <select
+              value={formData.trendWeightType}
+              onChange={(e) => updateFormData({ trendWeightType: e.target.value as TrendWeightType })}
+              className="w-full h-10 px-3 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              <option value="none">None - All data points equal (1x)</option>
+              <option value="quadratic">Quadratic - Very gentle (1.6x recent weight)</option>
+              <option value="exponential_low">Exponential Low - Gentle (2.7x recent weight)</option>
+              <option value="sqrt">Square Root - Moderate (3x recent weight)</option>
+              <option value="linear">Linear - Strong (5x recent weight)</option>
+              <option value="exponential_high">Exponential High - Very strong (7.4x recent weight)</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Higher weights make the trend line more responsive to your recent progress.
+            </p>
           </div>
 
           {/* Due Schedule */}
@@ -326,6 +351,14 @@ export default function TargetSettings({ target, onUpdate, onDelete }: TargetSet
               }</p>
               <p><strong>Progress Type:</strong> {formData.addToTotal ? 'Cumulative (add each entry)' : 'Latest value only'}</p>
               <p><strong>Trend Calculation:</strong> {formData.useActualBounds ? 'Uses actual data bounds' : 'Uses original start value'}</p>
+              <p><strong>Trend Weighting:</strong> {
+                formData.trendWeightType === 'none' ? 'Standard (equal weights)' :
+                formData.trendWeightType === 'linear' ? 'Linear (5x recent)' :
+                formData.trendWeightType === 'sqrt' ? 'Square Root (3x recent)' :
+                formData.trendWeightType === 'quadratic' ? 'Quadratic (1.6x recent)' :
+                formData.trendWeightType === 'exponential_low' ? 'Exponential Low (2.7x recent)' :
+                'Exponential High (7.4x recent)'
+              }</p>
               {daysUntilGoal > 0 && <p><strong>Days Remaining:</strong> {daysUntilGoal} days</p>}
             </div>
           </div>

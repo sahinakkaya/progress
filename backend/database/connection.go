@@ -53,6 +53,7 @@ func createTables() error {
         goal_date DATETIME NOT NULL,
         add_to_total BOOLEAN DEFAULT FALSE,
         use_actual_bounds BOOLEAN DEFAULT FALSE,
+        trend_weight_type TEXT DEFAULT 'none',
         due_type TEXT NOT NULL,
         due_specific_days TEXT,
         due_interval_type TEXT,
@@ -97,7 +98,18 @@ func runMigrations() error {
         }
         log.Println("📋 Added use_actual_bounds column to target_trackers table")
     }
-    
+
+    // Check if trend_weight_type column exists, if not add it
+    _, err = DB.Exec("SELECT trend_weight_type FROM target_trackers LIMIT 1")
+    if err != nil {
+        // Column doesn't exist, add it
+        _, err := DB.Exec("ALTER TABLE target_trackers ADD COLUMN trend_weight_type TEXT DEFAULT 'none'")
+        if err != nil {
+            return err
+        }
+        log.Println("📋 Added trend_weight_type column to target_trackers table")
+    }
+
     return nil
 }
 

@@ -1,5 +1,5 @@
 // src/components/detail/targetUtils.ts
-import type { TargetTracker, Entry } from '../../types';
+import type { TargetTracker, Entry, TrendWeightType } from '../../types';
 
 export interface TargetMetrics {
   currentValue: number;
@@ -26,18 +26,45 @@ export interface TargetMetrics {
 /**
  * Calculate weighted linear regression (least squares fit) for the data points
  * Returns slope and intercept for the best-fit line: y = slope * x + intercept
- * More recent points get higher weights (exponentially increasing)
+ *
+ * @param points - Array of {x, y} data points
+ * @param weightType - Type of weighting to apply to recent data
+ *   - 'none': All points equal weight (standard linear regression)
+ *   - 'linear': Weight = 1 + i (5x ratio)
+ *   - 'sqrt': Weight = 1 + sqrt(i) (3x ratio)
+ *   - 'quadratic': Weight = 1 + (i/n)² (1.6x ratio)
+ *   - 'exponential_low': Weight = exp(i/n) (2.7x ratio)
+ *   - 'exponential_high': Weight = exp(2*i/n) (7.4x ratio)
  */
-export function calculateLinearRegression(points: Array<{ x: number; y: number }>): { slope: number; intercept: number } {
+export function calculateLinearRegression(
+  points: Array<{ x: number; y: number }>,
+  weightType: TrendWeightType = 'none'
+): { slope: number; intercept: number } {
   if (points.length < 2) {
     return { slope: 0, intercept: 0 };
   }
 
   const n = points.length;
 
-  // Generate exponential weights: recent points get more weight
-  // Weight grows exponentially: w_i = exp(2 * i / n) where i goes from 0 to n-1
-  const weights = points.map((_, i) => Math.exp(2 * i / n));
+  // Generate weights based on selected type
+  const weights = points.map((_, i) => {
+    switch (weightType) {
+      case 'none':
+        return 1;
+      case 'linear':
+        return 1 + i;
+      case 'sqrt':
+        return 1 + Math.sqrt(i);
+      case 'quadratic':
+        return 1 + Math.pow(i / n, 2);
+      case 'exponential_low':
+        return Math.exp(i / n);
+      case 'exponential_high':
+        return Math.exp(2 * i / n);
+      default:
+        return 1;
+    }
+  });
 
   let sumW = 0;
   let sumWX = 0;
@@ -131,8 +158,8 @@ export const calculateTargetMetrics = (target: TargetTracker, entries: Entry[]):
       };
     });
 
-    // Calculate linear regression
-    const regression = calculateLinearRegression(progressPoints);
+    // Calculate linear regression with user's preferred weighting
+    const regression = calculateLinearRegression(progressPoints, target.trendWeightType || 'none');
 
     // Calculate when the trend line will reach the goal value
     // goalValue = slope * time + intercept
