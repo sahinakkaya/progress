@@ -173,6 +173,34 @@ interface TargetChartsProps {
   onToggleLine: (lineType: 'progress' | 'target' | 'trend') => void;
 }
 
+/**
+ * Calculate linear regression (least squares fit) for the data points
+ * Returns slope and intercept for the best-fit line: y = slope * x + intercept
+ */
+function calculateLinearRegression(points: Array<{ x: number; y: number }>): { slope: number; intercept: number } {
+  if (points.length < 2) {
+    return { slope: 0, intercept: 0 };
+  }
+
+  const n = points.length;
+  let sumX = 0;
+  let sumY = 0;
+  let sumXY = 0;
+  let sumX2 = 0;
+
+  for (const point of points) {
+    sumX += point.x;
+    sumY += point.y;
+    sumXY += point.x * point.y;
+    sumX2 += point.x * point.x;
+  }
+
+  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+  const intercept = (sumY - slope * sumX) / n;
+
+  return { slope, intercept };
+}
+
 export default function TargetCharts({ target, entries, projectedDate, lineVisibility, onToggleLine }: TargetChartsProps) {
 
   // Prepare data for different charts
@@ -213,6 +241,29 @@ export default function TargetCharts({ target, entries, projectedDate, lineVisib
 
   });
 
+  // Calculate linear regression for trend line
+  let trendSlope = 0;
+  let trendIntercept = 0;
+  let regressionProjectedDate = projectedDate;
+
+  if (lineVisibility.trend && progressData.length >= 2) {
+    const regressionPoints = progressData.map(p => ({
+      x: p.dateTime,
+      y: p.value
+    }));
+    const regression = calculateLinearRegression(regressionPoints);
+    trendSlope = regression.slope;
+    trendIntercept = regression.intercept;
+
+    // Calculate when the trend line will reach the goal value
+    // goalValue = slope * time + intercept
+    // time = (goalValue - intercept) / slope
+    if (trendSlope !== 0) {
+      const projectedTime = (target.goalValue - trendIntercept) / trendSlope;
+      regressionProjectedDate = new Date(projectedTime);
+    }
+  }
+
   // Create target line data points
 
   const combinedData = [];
@@ -241,28 +292,26 @@ export default function TargetCharts({ target, entries, projectedDate, lineVisib
 
     });
 
-    if (lineVisibility.trend) {
+    if (lineVisibility.trend && progressData.length >= 2) {
+      // Add trend line start point (at first data point)
+      const firstDataTime = progressData[0].dateTime;
+      const trendStartValue = trendSlope * firstDataTime + trendIntercept;
+
       combinedData.push({
-
-        dateTime: startDate.getTime(),
-
-        dateLabel: startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-
-        projectedValue: target.startValue,
-
+        dateTime: firstDataTime,
+        dateLabel: progressData[0].dateLabel,
+        projectedValue: trendStartValue,
         value: null
-
       });
+
+      // Add trend line end point (at projected date)
+      const trendEndValue = trendSlope * regressionProjectedDate.getTime() + trendIntercept;
+
       combinedData.push({
-
-        dateTime: projectedDate.getTime(),
-
-        dateLabel: projectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-
-        projectedValue: target.goalValue,
-
+        dateTime: regressionProjectedDate.getTime(),
+        dateLabel: regressionProjectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        projectedValue: trendEndValue,
         value: null
-
       });
     }
 
@@ -289,7 +338,7 @@ export default function TargetCharts({ target, entries, projectedDate, lineVisib
   const startTime = new Date(target.startDate).getTime();
   const goalTime = new Date(target.goalDate).getTime();
 
-  const projectedTime = projectedDate.getTime();
+  const projectedTime = regressionProjectedDate.getTime();
 
   progressData.forEach(point => {
 
@@ -300,9 +349,9 @@ export default function TargetCharts({ target, entries, projectedDate, lineVisib
       targetValue = target.startValue + (target.goalValue - target.startValue) * progress;
     }
 
-    if (lineVisibility.trend && point.dateTime >= startTime && point.dateTime <= projectedTime) {
-      const progress = (point.dateTime - startTime) / (projectedTime - startTime);
-      projectedValue = target.startValue + (target.goalValue - target.startValue) * progress;
+    // Use linear regression trend line at each progress point
+    if (lineVisibility.trend && progressData.length >= 2) {
+      projectedValue = trendSlope * point.dateTime + trendIntercept;
     }
 
     combinedData.push({
@@ -344,9 +393,9 @@ export default function TargetCharts({ target, entries, projectedDate, lineVisib
           targetValue = target.startValue + (target.goalValue - target.startValue) * progress;
         }
 
-        if (lineVisibility.trend && currentTime >= startTime && currentTime <= projectedTime) {
-          const progress = (currentTime - startTime) / (projectedTime - startTime);
-          projectedValue = target.startValue + (target.goalValue - target.startValue) * progress;
+        // Use linear regression trend line for interpolated points
+        if (lineVisibility.trend && progressData.length >= 2 && currentTime <= projectedTime) {
+          projectedValue = trendSlope * currentTime + trendIntercept;
         }
 
         // Only add the point if at least one visible line has a value
@@ -379,8 +428,8 @@ export default function TargetCharts({ target, entries, projectedDate, lineVisib
     const baseTicks = [startTime, goalTime];
 
     // Add projected date only if trend line is shown
-    if (lineVisibility.trend) {
-      baseTicks.push(projectedTime);
+    if (lineVisibility.trend && progressData.length >= 2) {
+      baseTicks.push(regressionProjectedDate.getTime());
     }
 
     // Add quarter points for better granularity

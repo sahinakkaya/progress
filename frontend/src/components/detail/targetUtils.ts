@@ -23,6 +23,34 @@ export interface TargetMetrics {
   projectedValueOnGoalDate: number;
 }
 
+/**
+ * Calculate linear regression (least squares fit) for the data points
+ * Returns slope and intercept for the best-fit line: y = slope * x + intercept
+ */
+function calculateLinearRegression(points: Array<{ x: number; y: number }>): { slope: number; intercept: number } {
+  if (points.length < 2) {
+    return { slope: 0, intercept: 0 };
+  }
+
+  const n = points.length;
+  let sumX = 0;
+  let sumY = 0;
+  let sumXY = 0;
+  let sumX2 = 0;
+
+  for (const point of points) {
+    sumX += point.x;
+    sumY += point.y;
+    sumXY += point.x * point.y;
+    sumX2 += point.x * point.x;
+  }
+
+  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+  const intercept = (sumY - slope * sumX) / n;
+
+  return { slope, intercept };
+}
+
 export const calculateTargetMetrics = (target: TargetTracker, entries: Entry[]): TargetMetrics => {
   // Calculate current value
   const currentValue = target.addToTotal
@@ -66,14 +94,59 @@ export const calculateTargetMetrics = (target: TargetTracker, entries: Entry[]):
   const remainingValue = Math.max(0, target.goalValue - currentValue);
   const dailyRequired = daysUntilGoal > 0 ? remainingValue / daysUntilGoal : 0;
 
-  // Projected completion
-  const projectedDaysToComplete = pacePercentage * totalDuration / actualProgress;
-  const projectedDate = new Date(target.startDate);
-  projectedDate.setDate(projectedDate.getDate() + projectedDaysToComplete);
-  
-  // Calculate projected value on goal date based on current daily rate
-  const dailyRate = daysActive > 0 ? (currentValue - target.startValue) / daysActive : 0;
-  const projectedValueOnGoalDate = target.startValue + (dailyRate * totalDuration);
+  // Projected completion using linear regression
+  let projectedDate = new Date(target.goalDate);
+  let projectedValueOnGoalDate = target.goalValue;
+  let projectedDaysToComplete = totalDuration;
+
+  if (entries.length >= 2) {
+    // Sort entries by date
+    const sortedEntries = [...entries].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Build progress data points
+    const progressPoints = sortedEntries.map((entry, index) => {
+      let cumulativeValue;
+      if (target.addToTotal) {
+        cumulativeValue = target.startValue + sortedEntries.slice(0, index + 1).reduce((sum, e) => sum + (e.value || 0), 0);
+      } else {
+        cumulativeValue = entry.value || 0;
+      }
+
+      return {
+        x: new Date(entry.date).getTime(),
+        y: cumulativeValue
+      };
+    });
+
+    // Calculate linear regression
+    const regression = calculateLinearRegression(progressPoints);
+
+    // Calculate when the trend line will reach the goal value
+    // goalValue = slope * time + intercept
+    // time = (goalValue - intercept) / slope
+    if (regression.slope !== 0) {
+      const projectedTime = (target.goalValue - regression.intercept) / regression.slope;
+      projectedDate = new Date(projectedTime);
+
+      // Calculate days from start
+      const projectedMillis = projectedTime - new Date(target.startDate).getTime();
+      projectedDaysToComplete = projectedMillis / (1000 * 60 * 60 * 24);
+    }
+
+    // Calculate projected value on goal date using regression
+    const goalTime = new Date(target.goalDate).getTime();
+    projectedValueOnGoalDate = regression.slope * goalTime + regression.intercept;
+  } else {
+    // Fallback to old calculation if not enough data
+    projectedDaysToComplete = pacePercentage > 0 && actualProgress > 0
+      ? pacePercentage * totalDuration / actualProgress
+      : totalDuration;
+    projectedDate = new Date(target.startDate);
+    projectedDate.setDate(projectedDate.getDate() + projectedDaysToComplete);
+
+    const dailyRate = daysActive > 0 ? (currentValue - target.startValue) / daysActive : 0;
+    projectedValueOnGoalDate = target.startValue + (dailyRate * totalDuration);
+  }
 
   return {
     currentValue,
