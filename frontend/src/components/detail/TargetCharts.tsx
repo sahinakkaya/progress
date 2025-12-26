@@ -395,14 +395,14 @@ export default function TargetCharts({ target, entries, projectedDate, lineVisib
 
     const startTime = new Date(target.startDate).getTime();
     const goalTime = new Date(target.goalDate).getTime();
-    const projectedTime = projectedDate.getTime();
+    const projectedTime = regressionProjectedDate.getTime();
 
     // Base ticks always include start and goal
     const baseTicks = [startTime, goalTime];
 
     // Add projected date only if trend line is shown
     if (lineVisibility.trend && progressData.length >= 2) {
-      baseTicks.push(regressionProjectedDate.getTime());
+      baseTicks.push(projectedTime);
     }
 
     // Add quarter points for better granularity
