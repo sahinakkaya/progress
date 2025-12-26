@@ -24,29 +24,42 @@ export interface TargetMetrics {
 }
 
 /**
- * Calculate linear regression (least squares fit) for the data points
+ * Calculate weighted linear regression (least squares fit) for the data points
  * Returns slope and intercept for the best-fit line: y = slope * x + intercept
+ * More recent points get higher weights (exponentially increasing)
  */
-function calculateLinearRegression(points: Array<{ x: number; y: number }>): { slope: number; intercept: number } {
+export function calculateLinearRegression(points: Array<{ x: number; y: number }>): { slope: number; intercept: number } {
   if (points.length < 2) {
     return { slope: 0, intercept: 0 };
   }
 
   const n = points.length;
-  let sumX = 0;
-  let sumY = 0;
-  let sumXY = 0;
-  let sumX2 = 0;
 
-  for (const point of points) {
-    sumX += point.x;
-    sumY += point.y;
-    sumXY += point.x * point.y;
-    sumX2 += point.x * point.x;
+  // Generate exponential weights: recent points get more weight
+  // Weight grows exponentially: w_i = exp(2 * i / n) where i goes from 0 to n-1
+  const weights = points.map((_, i) => Math.exp(2 * i / n));
+
+  let sumW = 0;
+  let sumWX = 0;
+  let sumWY = 0;
+  let sumWXY = 0;
+  let sumWX2 = 0;
+
+  for (let i = 0; i < n; i++) {
+    const w = weights[i];
+    const x = points[i].x;
+    const y = points[i].y;
+
+    sumW += w;
+    sumWX += w * x;
+    sumWY += w * y;
+    sumWXY += w * x * y;
+    sumWX2 += w * x * x;
   }
 
-  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-  const intercept = (sumY - slope * sumX) / n;
+  // Weighted least squares formulas
+  const slope = (sumW * sumWXY - sumWX * sumWY) / (sumW * sumWX2 - sumWX * sumWX);
+  const intercept = (sumWY - slope * sumWX) / sumW;
 
   return { slope, intercept };
 }

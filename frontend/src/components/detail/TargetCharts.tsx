@@ -3,6 +3,7 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
 
 import type { TargetTracker, Entry } from '../../types';
+import { calculateLinearRegression } from './targetUtils';
 
 
 interface CustomTooltipProps {
@@ -171,34 +172,6 @@ interface TargetChartsProps {
     trend: boolean;
   };
   onToggleLine: (lineType: 'progress' | 'target' | 'trend') => void;
-}
-
-/**
- * Calculate linear regression (least squares fit) for the data points
- * Returns slope and intercept for the best-fit line: y = slope * x + intercept
- */
-function calculateLinearRegression(points: Array<{ x: number; y: number }>): { slope: number; intercept: number } {
-  if (points.length < 2) {
-    return { slope: 0, intercept: 0 };
-  }
-
-  const n = points.length;
-  let sumX = 0;
-  let sumY = 0;
-  let sumXY = 0;
-  let sumX2 = 0;
-
-  for (const point of points) {
-    sumX += point.x;
-    sumY += point.y;
-    sumXY += point.x * point.y;
-    sumX2 += point.x * point.x;
-  }
-
-  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-  const intercept = (sumY - slope * sumX) / n;
-
-  return { slope, intercept };
 }
 
 export default function TargetCharts({ target, entries, projectedDate, lineVisibility, onToggleLine }: TargetChartsProps) {
