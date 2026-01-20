@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Edit, Trash2, Calendar, TrendingUp, TrendingDown, Square, CheckSquare } from 'lucide-react';
 import { targetApi, entriesApi } from '../../services/api';
-import type { TargetTracker, Entry, AddEntryRequest } from '../../types';
+import type { TargetTracker, Entry, AddEntryRequest, UpdateEntryRequest } from '../../types';
 
 interface TargetHistoryProps {
   target: TargetTracker;
@@ -19,7 +19,8 @@ export default function TargetHistory({ target, entries, onUpdate }: TargetHisto
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [editFormData, setEditFormData] = useState({
     value: '',
-    note: ''
+    note: '',
+    date: ''
   });
   const [selectedEntries, setSelectedEntries] = useState<Set<number>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -68,6 +69,32 @@ export default function TargetHistory({ target, entries, onUpdate }: TargetHisto
     } catch (error) {
       console.error('Failed to delete entry:', error);
       alert('Failed to delete entry. Please try again.');
+    }
+  };
+
+  const handleEditEntry = async () => {
+    if (!editingEntry) return;
+
+    const numValue = parseFloat(editFormData.value);
+    if (isNaN(numValue) || numValue <= 0) {
+      alert('Please enter a valid value greater than 0');
+      return;
+    }
+
+    try {
+      const updateData: UpdateEntryRequest = {
+        value: numValue,
+        note: editFormData.note || undefined,
+        date: editFormData.date
+      };
+
+      await entriesApi.update(editingEntry.id, updateData);
+      setEditingEntry(null);
+      setEditFormData({ value: '', note: '', date: '' });
+      onUpdate();
+    } catch (error) {
+      console.error('Failed to update entry:', error);
+      alert('Failed to update entry. Please try again.');
     }
   };
 
@@ -343,7 +370,8 @@ export default function TargetHistory({ target, entries, onUpdate }: TargetHisto
                             setEditingEntry(entry);
                             setEditFormData({
                               value: (entry.value || 0).toString(),
-                              note: entry.note || ''
+                              note: entry.note || '',
+                              date: entry.date.split('T')[0]
                             });
                           }}
                           className="p-2"
@@ -427,19 +455,32 @@ export default function TargetHistory({ target, entries, onUpdate }: TargetHisto
               <CardTitle>Edit Entry</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Value</label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  value={editFormData.value}
-                  onChange={(e) => setEditFormData(prev => ({
-                    ...prev,
-                    value: e.target.value
-                  }))}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Value</label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={editFormData.value}
+                    onChange={(e) => setEditFormData(prev => ({
+                      ...prev,
+                      value: e.target.value
+                    }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Date</label>
+                  <Input
+                    type="date"
+                    value={editFormData.date}
+                    onChange={(e) => setEditFormData(prev => ({
+                      ...prev,
+                      date: e.target.value
+                    }))}
+                  />
+                </div>
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Note</label>
                 <Textarea
@@ -452,18 +493,14 @@ export default function TargetHistory({ target, entries, onUpdate }: TargetHisto
                   rows={3}
                 />
               </div>
-              
+
               <div className="flex gap-2">
-                <Button onClick={() => {
-                  // Save edit logic here
-                  console.log('Edit entry not implemented yet');
-                  setEditingEntry(null);
-                }}>
+                <Button onClick={handleEditEntry}>
                   Save Changes
                 </Button>
                 <Button variant="outline" onClick={() => {
                   setEditingEntry(null);
-                  setEditFormData({ value: '', note: '' });
+                  setEditFormData({ value: '', note: '', date: '' });
                 }}>
                   Cancel
                 </Button>

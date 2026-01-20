@@ -29,6 +29,7 @@ func main() {
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{
 			"http://localhost:5173",  // Vite dev server
+			"http://localhost:5174",  // Vite dev server
 			"http://localhost:3000",  // Docker serve
 			"http://192.168.1.101:5173", // Mobile testing
 			"https://my-progress.sahinakkaya.dev", // Personal instance
