@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle, XCircle, Plus, Edit, Trash2, Calendar, Square, CheckSquare } from 'lucide-react';
 import { habitApi, entriesApi } from '../../services/api';
-import type { HabitTracker, Entry, AddEntryRequest } from '../../types';
+import type { HabitTracker, Entry, AddEntryRequest, UpdateEntryRequest } from '../../types';
 
 interface HabitHistoryProps {
   habit: HabitTracker;
@@ -54,7 +54,7 @@ export default function HabitHistory({ habit, entries, onUpdate }: HabitHistoryP
 
   const handleDeleteEntry = async (entry: Entry) => {
     setDeletingEntryId(entry.id);
-    
+
     try {
       await entriesApi.delete(entry.id);
       onUpdate();
@@ -63,6 +63,25 @@ export default function HabitHistory({ habit, entries, onUpdate }: HabitHistoryP
       alert('Failed to delete entry. Please try again.');
     } finally {
       setDeletingEntryId(null);
+    }
+  };
+
+  const handleEditEntry = async () => {
+    if (!editingEntry) return;
+
+    try {
+      const updateData: UpdateEntryRequest = {
+        done: editingEntry.done,
+        note: editingEntry.note || undefined,
+        date: editingEntry.date
+      };
+
+      await entriesApi.update(editingEntry.id, updateData);
+      setEditingEntry(null);
+      onUpdate();
+    } catch (error) {
+      console.error('Failed to update entry:', error);
+      alert('Failed to update entry. Please try again.');
     }
   };
 
@@ -415,7 +434,7 @@ export default function HabitHistory({ habit, entries, onUpdate }: HabitHistoryP
         </Card>
       )}
 
-      {/* Edit Entry Modal/Dialog would go here */}
+      {/* Edit Entry Modal */}
       {editingEntry && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
@@ -447,20 +466,22 @@ export default function HabitHistory({ habit, entries, onUpdate }: HabitHistoryP
                   <span>{habit.badHabit ? 'No' : 'Missed'}</span>
                 </label>
               </div>
-              
+
+              <Input
+                type="date"
+                value={editingEntry.date.split('T')[0]}
+                onChange={(e) => setEditingEntry(prev => prev ? { ...prev, date: e.target.value } : null)}
+              />
+
               <Textarea
                 placeholder="Add a note (optional)"
                 value={editingEntry.note || ''}
                 onChange={(e) => setEditingEntry(prev => prev ? { ...prev, note: e.target.value } : null)}
                 rows={3}
               />
-              
+
               <div className="flex gap-2">
-                <Button onClick={() => {
-                  // Save edit logic here
-                  console.log('Edit entry not implemented yet');
-                  setEditingEntry(null);
-                }}>
+                <Button onClick={handleEditEntry}>
                   Save Changes
                 </Button>
                 <Button variant="outline" onClick={() => setEditingEntry(null)}>
