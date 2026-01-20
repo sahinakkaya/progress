@@ -82,6 +82,13 @@ export interface AddEntryRequest {
   note?: string;
 }
 
+export interface UpdateEntryRequest {
+  done?: boolean;
+  value?: number;
+  date?: string;
+  note?: string;
+}
+
 // API Response wrapper
 export interface ApiResponse<T> {
   data: T;

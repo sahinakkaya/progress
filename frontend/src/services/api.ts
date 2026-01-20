@@ -1,11 +1,12 @@
-import type { 
-  DashboardResponse, 
-  HabitTracker, 
-  TargetTracker, 
-  Entry, 
-  CreateHabitRequest, 
-  CreateTargetRequest, 
-  AddEntryRequest 
+import type {
+  DashboardResponse,
+  HabitTracker,
+  TargetTracker,
+  Entry,
+  CreateHabitRequest,
+  CreateTargetRequest,
+  AddEntryRequest,
+  UpdateEntryRequest
 } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
@@ -141,12 +142,18 @@ export const targetApi = {
 export const entriesApi = {
   getAll: (): Promise<Entry[]> =>
     apiRequest<Entry[]>('/entries'),
-  
+
+  update: (id: number, data: UpdateEntryRequest): Promise<Entry> =>
+    apiRequest<Entry>(`/entries/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
   delete: (id: number): Promise<void> =>
     apiRequest<void>(`/entries/${id}`, {
       method: 'DELETE',
     }),
-  
+
   bulkDelete: (ids: number[]): Promise<void> =>
     apiRequest<void>('/entries', {
       method: 'DELETE',
