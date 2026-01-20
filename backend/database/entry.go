@@ -25,6 +25,87 @@ func CreateEntry(e models.Entry) (*models.Entry, error) {
 	return &e, nil
 }
 
+func UpdateEntry(entryID int, updates models.UpdateEntryRequest) (*models.Entry, error) {
+	// First, get the current entry to verify it exists
+	var entry models.Entry
+	var value sql.NullFloat64
+	var done sql.NullBool
+
+	query := `SELECT id, tracker_id, type, value, done, date, note, created_at FROM entries WHERE id = ?`
+	err := DB.QueryRow(query, entryID).Scan(&entry.ID, &entry.TrackerID, &entry.Type, &value, &done, &entry.Date, &entry.Note, &entry.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	if value.Valid {
+		entry.Value = value.Float64
+	}
+	if done.Valid {
+		boolVal := done.Bool
+		entry.Done = &boolVal
+	}
+
+	// Build dynamic update query based on provided fields
+	updateQuery := "UPDATE entries SET "
+	args := []interface{}{}
+	updates_made := false
+
+	if updates.Value != nil {
+		updateQuery += "value = ?, "
+		args = append(args, *updates.Value)
+		updates_made = true
+	}
+
+	if updates.Done != nil {
+		updateQuery += "done = ?, "
+		args = append(args, *updates.Done)
+		updates_made = true
+	}
+
+	if updates.Date != nil {
+		updateQuery += "date = ?, "
+		args = append(args, *updates.Date)
+		updates_made = true
+	}
+
+	if updates.Note != nil {
+		updateQuery += "note = ?, "
+		args = append(args, *updates.Note)
+		updates_made = true
+	}
+
+	if !updates_made {
+		// No fields to update, return current entry
+		return &entry, nil
+	}
+
+	// Remove trailing comma and space
+	updateQuery = updateQuery[:len(updateQuery)-2]
+	updateQuery += " WHERE id = ?"
+	args = append(args, entryID)
+
+	_, err = DB.Exec(updateQuery, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch and return the updated entry
+	err = DB.QueryRow(query, entryID).Scan(&entry.ID, &entry.TrackerID, &entry.Type, &value, &done, &entry.Date, &entry.Note, &entry.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	if value.Valid {
+		entry.Value = value.Float64
+	}
+	if done.Valid {
+		boolVal := done.Bool
+		entry.Done = &boolVal
+	}
+
+	return &entry, nil
+}
+
 func GetEntriesByTracker(trackerID int, trackerType string) ([]models.Entry, error) {
 	// Get the tracker's start date to filter entries
 	var startDate string

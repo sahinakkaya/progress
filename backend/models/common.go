@@ -63,3 +63,10 @@ type AddEntryRequest struct {
 	Date  string  `json:"date,omitempty" example:"2024-01-01T15:30:00Z"` // optional, defaults to now. Supports both date (YYYY-MM-DD) and datetime (RFC3339) formats
 	Note  string  `json:"note,omitempty" example:"Felt great today"`
 }
+
+type UpdateEntryRequest struct {
+	Value *float64 `json:"value,omitempty"`        // For target trackers
+	Done  *bool    `json:"done,omitempty"`         // For habit trackers
+	Date  *string  `json:"date,omitempty" example:"2024-01-01T15:30:00Z"` // Supports both date (YYYY-MM-DD) and datetime (RFC3339) formats
+	Note  *string  `json:"note,omitempty" example:"Updated note"`
+}

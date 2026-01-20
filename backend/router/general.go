@@ -13,6 +13,7 @@ func SetupGeneralRoutes(api *mux.Router) {
     // Combined data routes
     RegisterAndHandle(api, "GET", "/trackers", "Get all trackers combined", handlers.GetAllTrackers)
     RegisterAndHandle(api, "GET", "/entries", "Get all entries", handlers.GetAllEntries)
+    RegisterAndHandle(api, "PUT", "/entries/{id}", "Update entry by ID", handlers.UpdateEntry)
     RegisterAndHandle(api, "DELETE", "/entries/{id}", "Delete entry by ID", handlers.DeleteEntry)
     RegisterAndHandle(api, "DELETE", "/entries", "Bulk delete entries", handlers.BulkDeleteEntries)
 

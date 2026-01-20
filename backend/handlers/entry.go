@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"net/http"
-  "routine-tracker/database"
+	"routine-tracker/database"
+	"routine-tracker/models"
 	"strconv"
 )
 
@@ -80,6 +82,46 @@ func DeleteEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// UpdateEntry updates a specific entry
+// @Summary Update entry
+// @Description Update a specific entry by ID
+// @Tags General
+// @Accept json
+// @Produce json
+// @Param id path int true "Entry ID"
+// @Param entry body models.UpdateEntryRequest true "Update entry request"
+// @Success 200 {object} models.Entry
+// @Failure 400 {string} string "Bad Request"
+// @Failure 404 {string} string "Entry not found"
+// @Router /entries/{id} [put]
+func UpdateEntry(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	entryID, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid entry ID", http.StatusBadRequest)
+		return
+	}
+
+	var req models.UpdateEntryRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	updatedEntry, err := database.UpdateEntry(entryID, req)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Entry not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to update entry: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(updatedEntry)
 }
 
 // BulkDeleteEntries deletes multiple entries
