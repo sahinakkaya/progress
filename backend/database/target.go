@@ -10,6 +10,13 @@ func CreateTargetTracker(t target.TargetTracker) (*target.TargetTracker, error) 
 	dueSpecificDays, _ := json.Marshal(t.Due.SpecificDays)
 	reminderTimes, _ := json.Marshal(t.Reminders.Times)
 
+	// Set default trend weight type if not provided
+	trendWeightType := t.TrendWeightType
+	if trendWeightType == nil {
+		defaultType := "none"
+		trendWeightType = &defaultType
+	}
+
 	query := `
         INSERT INTO target_trackers (
             tracker_name, start_value, goal_value, start_date, goal_date, add_to_total, use_actual_bounds, trend_weight_type,
@@ -19,7 +26,7 @@ func CreateTargetTracker(t target.TargetTracker) (*target.TargetTracker, error) 
     `
 
 	result, err := DB.Exec(query,
-		t.TrackerName, t.StartValue, t.GoalValue, t.StartDate, t.GoalDate, t.AddToTotal, t.UseActualBounds, t.TrendWeightType,
+		t.TrackerName, t.StartValue, t.GoalValue, t.StartDate, t.GoalDate, t.AddToTotal, t.UseActualBounds, trendWeightType,
 		t.Due.Type, string(dueSpecificDays), t.Due.IntervalType, t.Due.IntervalValue,
 		string(reminderTimes), t.Reminders.Enabled,
 	)
@@ -33,10 +40,8 @@ func CreateTargetTracker(t target.TargetTracker) (*target.TargetTracker, error) 
 		return nil, err
 	}
 
-	t.ID = int(id)
-	t.CreatedAt = time.Now()
-
-	return &t, nil
+	// Fetch the created record to get database defaults applied
+	return GetTargetTrackerByID(int(id))
 }
 
 func GetAllTargetTrackers() ([]target.TargetTracker, error) {

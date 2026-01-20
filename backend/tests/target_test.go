@@ -496,3 +496,160 @@ func TestTargetTrackerDetailPageFlow(t *testing.T) {
 		t.Errorf("Expected total value %.1f, got %.1f", expectedTotal, totalValue)
 	}
 }
+
+func TestTargetTrendWeightTypeDefault(t *testing.T) {
+	// Create a target without specifying TrendWeightType
+	targetRequest := target.CreateTargetRequest{
+		TrackerName: "Test Default Trend Weight",
+		StartValue:  0,
+		GoalValue:   100,
+		StartDate:   time.Now().Format("2006-01-02"),
+		GoalDate:    time.Now().AddDate(0, 3, 0).Format("2006-01-02"),
+		AddToTotal:  true,
+		Due: models.Due{
+			Type:         "specificDays",
+			SpecificDays: []string{"monday"},
+		},
+	}
+
+	createRr, err := makeRequest("POST", "/api/target-trackers", targetRequest)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var createdTarget target.TargetTracker
+	json.Unmarshal(createRr.Body.Bytes(), &createdTarget)
+
+	// Verify default trend weight type is "none"
+	if createdTarget.TrendWeightType == nil {
+		t.Error("Expected TrendWeightType to be set to default value")
+	} else if *createdTarget.TrendWeightType != "none" {
+		t.Errorf("Expected default TrendWeightType 'none', got '%s'", *createdTarget.TrendWeightType)
+	}
+}
+
+func TestTargetTrendWeightTypeCreate(t *testing.T) {
+	// Create a target with specific TrendWeightType
+	weightType := "exponential_low"
+	targetRequest := target.CreateTargetRequest{
+		TrackerName:     "Test Custom Trend Weight",
+		StartValue:      0,
+		GoalValue:       100,
+		StartDate:       time.Now().Format("2006-01-02"),
+		GoalDate:        time.Now().AddDate(0, 3, 0).Format("2006-01-02"),
+		AddToTotal:      true,
+		TrendWeightType: &weightType,
+		Due: models.Due{
+			Type:         "specificDays",
+			SpecificDays: []string{"tuesday"},
+		},
+	}
+
+	createRr, err := makeRequest("POST", "/api/target-trackers", targetRequest)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if createRr.Code != http.StatusCreated {
+		t.Errorf("Expected status %d, got %d. Body: %s", http.StatusCreated, createRr.Code, createRr.Body.String())
+	}
+
+	var createdTarget target.TargetTracker
+	json.Unmarshal(createRr.Body.Bytes(), &createdTarget)
+
+	// Verify trend weight type is set correctly
+	if createdTarget.TrendWeightType == nil {
+		t.Error("Expected TrendWeightType to be set")
+	} else if *createdTarget.TrendWeightType != "exponential_low" {
+		t.Errorf("Expected TrendWeightType 'exponential_low', got '%s'", *createdTarget.TrendWeightType)
+	}
+}
+
+func TestTargetTrendWeightTypeUpdate(t *testing.T) {
+	// Create a target with default trend weight type
+	targetRequest := target.CreateTargetRequest{
+		TrackerName: "Test Update Trend Weight",
+		StartValue:  0,
+		GoalValue:   100,
+		StartDate:   time.Now().Format("2006-01-02"),
+		GoalDate:    time.Now().AddDate(0, 3, 0).Format("2006-01-02"),
+		AddToTotal:  true,
+		Due: models.Due{
+			Type:         "specificDays",
+			SpecificDays: []string{"wednesday"},
+		},
+	}
+
+	createRr, err := makeRequest("POST", "/api/target-trackers", targetRequest)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var createdTarget target.TargetTracker
+	json.Unmarshal(createRr.Body.Bytes(), &createdTarget)
+
+	// Update the trend weight type
+	newWeightType := "linear"
+	updateRequest := target.UpdateTargetRequest{
+		TrendWeightType: &newWeightType,
+	}
+
+	updateRr, err := makeRequest("PUT", fmt.Sprintf("/api/target-trackers/%d", createdTarget.ID), updateRequest)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if updateRr.Code != http.StatusOK {
+		t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, updateRr.Code, updateRr.Body.String())
+	}
+
+	var updatedTarget target.TargetTracker
+	json.Unmarshal(updateRr.Body.Bytes(), &updatedTarget)
+
+	// Verify the trend weight type was updated
+	if updatedTarget.TrendWeightType == nil {
+		t.Error("Expected TrendWeightType to be set after update")
+	} else if *updatedTarget.TrendWeightType != "linear" {
+		t.Errorf("Expected updated TrendWeightType 'linear', got '%s'", *updatedTarget.TrendWeightType)
+	}
+}
+
+func TestTargetTrendWeightTypeAllOptions(t *testing.T) {
+	// Test all valid trend weight type options
+	validOptions := []string{"none", "linear", "sqrt", "quadratic", "exponential_low", "exponential_high"}
+
+	for _, option := range validOptions {
+		weightType := option
+		targetRequest := target.CreateTargetRequest{
+			TrackerName:     fmt.Sprintf("Test %s", option),
+			StartValue:      0,
+			GoalValue:       100,
+			StartDate:       time.Now().Format("2006-01-02"),
+			GoalDate:        time.Now().AddDate(0, 3, 0).Format("2006-01-02"),
+			AddToTotal:      true,
+			TrendWeightType: &weightType,
+			Due: models.Due{
+				Type:         "specificDays",
+				SpecificDays: []string{"friday"},
+			},
+		}
+
+		createRr, err := makeRequest("POST", "/api/target-trackers", targetRequest)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if createRr.Code != http.StatusCreated {
+			t.Errorf("Expected status %d for option '%s', got %d", http.StatusCreated, option, createRr.Code)
+		}
+
+		var createdTarget target.TargetTracker
+		json.Unmarshal(createRr.Body.Bytes(), &createdTarget)
+
+		if createdTarget.TrendWeightType == nil {
+			t.Errorf("Expected TrendWeightType to be set for option '%s'", option)
+		} else if *createdTarget.TrendWeightType != option {
+			t.Errorf("Expected TrendWeightType '%s', got '%s'", option, *createdTarget.TrendWeightType)
+		}
+	}
+}

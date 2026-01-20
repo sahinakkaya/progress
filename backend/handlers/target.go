@@ -146,6 +146,7 @@ func CreateTargetTracker(w http.ResponseWriter, r *http.Request) {
 		GoalDate:        goalDate,
 		AddToTotal:      req.AddToTotal,
 		UseActualBounds: false, // Default to false for new targets
+		TrendWeightType: req.TrendWeightType,
 		Due:             req.Due,
 		Reminders:       reminders,
 		CreatedAt:       time.Now(),
@@ -156,6 +157,9 @@ func CreateTargetTracker(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to create target tracker: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// Set OriginalStartValue for consistency with other endpoints
+	created.OriginalStartValue = created.StartValue
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -188,14 +192,24 @@ func UpdateTargetTracker(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-  // fmt.Println(req.Due.SpecificDays)
-  database.UpdateTargetTracker(trackerID, req)
-
+	// fmt.Println(req.Due.SpecificDays)
+	err = database.UpdateTargetTracker(trackerID, req)
+	if err != nil {
+		http.Error(w, "Failed to update target tracker: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	tracker, err := database.GetTargetTrackerByID(trackerID)
+	if err != nil {
+		http.Error(w, "Target tracker not found after update", http.StatusNotFound)
+		return
+	}
+
+	// Set OriginalStartValue for consistency
+	tracker.OriginalStartValue = tracker.StartValue
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(tracker)
-	return
 }
 
 
