@@ -1,5 +1,7 @@
 # Progress - Habit & Target Tracker
 
+![](https://uptime.sahinakkaya.dev/api/badge/28/status)
+
 A full-stack web application for tracking habits and targets with flexible scheduling, progress visualization.
 
 ## Features
